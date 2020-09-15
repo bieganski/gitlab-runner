@@ -332,6 +332,8 @@ type Secrets map[string]Secret
 
 type Secret struct {
 	Vault *VaultSecret `json:"vault,omitempty"`
+
+	File *bool `json:"file,omitempty"`
 }
 
 type VaultSecret struct {
@@ -369,6 +371,16 @@ func (s Secret) expandVariables(vars JobVariables) {
 	if s.Vault != nil {
 		s.Vault.expandVariables(vars)
 	}
+}
+
+// The default behavior is to represent the variable as FILE type.
+// If defined by the user - set to whatever was chosen.
+func (s Secret) IsFile() bool {
+	if s.File == nil {
+		return true
+	}
+
+	return *s.File
 }
 
 func (s *VaultSecret) expandVariables(vars JobVariables) {
