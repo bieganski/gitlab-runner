@@ -111,13 +111,13 @@ func (s *commandExecutor) Run(cmd common.ExecutorCommand) error {
 
 func (s *commandExecutor) getContainer(cmd common.ExecutorCommand) (*types.ContainerJSON, error) {
 	if cmd.Predefined {
-		return s.requestNewPredefinedContainer()
+		return s.requestNewPredefinedContainer(cmd)
 	}
 
-	return s.requestBuildContainer()
+	return s.requestBuildContainer(cmd)
 }
 
-func (s *commandExecutor) requestNewPredefinedContainer() (*types.ContainerJSON, error) {
+func (s *commandExecutor) requestNewPredefinedContainer(cmd common.ExecutorCommand) (*types.ContainerJSON, error) {
 	prebuildImage, err := s.getPrebuiltImage()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,13 @@ func (s *commandExecutor) requestNewPredefinedContainer() (*types.ContainerJSON,
 		Name: prebuildImage.ID,
 	}
 
-	containerJSON, err := s.createContainer("predefined", buildImage, s.getHelperImageCmd(), []string{prebuildImage.ID})
+	containerJSON, err := s.createContainer(
+		"predefined",
+		buildImage,
+		s.getHelperImageCmd(),
+		[]string{prebuildImage.ID},
+		cmd.AdditionalEnv,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +149,7 @@ func (s *commandExecutor) getHelperImageCmd() []string {
 	return s.helperImageInfo.Cmd
 }
 
-func (s *commandExecutor) requestBuildContainer() (*types.ContainerJSON, error) {
+func (s *commandExecutor) requestBuildContainer(cmd common.ExecutorCommand) (*types.ContainerJSON, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -159,12 +165,18 @@ func (s *commandExecutor) requestBuildContainer() (*types.ContainerJSON, error) 
 	}
 
 	var err error
-	s.buildContainer, err = s.createContainer("build", s.Build.Image, s.BuildShell.DockerCommand, []string{})
+	s.buildContainer, err = s.createContainer(
+		"build",
+		s.Build.Image,
+		s.BuildShell.DockerCommand,
+		[]string{},
+		cmd.AdditionalEnv,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.changeFilesOwnership()
+	err = s.changeFilesOwnership(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +184,7 @@ func (s *commandExecutor) requestBuildContainer() (*types.ContainerJSON, error) 
 	return s.buildContainer, nil
 }
 
-func (s *commandExecutor) changeFilesOwnership() error {
+func (s *commandExecutor) changeFilesOwnership(cmd common.ExecutorCommand) error {
 	if !s.isUmaskDisabled() {
 		return nil
 	}
@@ -222,11 +234,11 @@ func (s *commandExecutor) changeFilesOwnership() error {
 		return nil
 	}
 
-	return s.executeChown(dockerExec, uid, gid)
+	return s.executeChown(dockerExec, uid, gid, cmd)
 }
 
-func (s *commandExecutor) executeChown(dockerExec exec.Docker, uid int, gid int) error {
-	c, err := s.requestNewPredefinedContainer()
+func (s *commandExecutor) executeChown(dockerExec exec.Docker, uid int, gid int, cmd common.ExecutorCommand) error {
+	c, err := s.requestNewPredefinedContainer(cmd)
 	if err != nil {
 		return fmt.Errorf("requesting new predefined container: %w", err)
 	}
