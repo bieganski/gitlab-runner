@@ -97,6 +97,10 @@ func (s *executor) runLegacy(cmd common.ExecutorCommand) error {
 
 	// Fill process environment variables
 	c.Env = append(os.Environ(), s.BuildShell.Environment...)
+	// These variables should take precedence since they are private environment variables
+	// for specific build stages.
+	c.Env = append(c.Env, cmd.AdditionalEnv...)
+
 	c.Stdout = s.Trace
 	c.Stderr = s.Trace
 
@@ -163,8 +167,13 @@ func (s *executor) shellScriptArgs(cmd common.ExecutorCommand, args []string) (i
 
 func (s *executor) run(cmd common.ExecutorCommand) error {
 	s.BuildLogger.Debugln("Using new shell command execution")
+
+	env := append(os.Environ(), s.BuildShell.Environment...)
+	// These variables should take precedence since they are private environment variables
+	// for specific build stages.
+	env = append(env, cmd.AdditionalEnv...)
 	cmdOpts := process.CommandOptions{
-		Env:    append(os.Environ(), s.BuildShell.Environment...),
+		Env:    env,
 		Stdout: s.Trace,
 		Stderr: s.Trace,
 	}
