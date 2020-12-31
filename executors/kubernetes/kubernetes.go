@@ -34,8 +34,9 @@ import (
 )
 
 const (
-	buildContainerName  = "build"
-	helperContainerName = "helper"
+	buildContainerName       = "build"
+	helperContainerName      = "helper"
+	cacheHelperContainerName = "cache-helper"
 
 	detectShellScriptName = "detect_shell_script"
 
@@ -199,6 +200,15 @@ func (s *executor) Run(cmd common.ExecutorCommand) error {
 	return s.runWithAttach(cmd)
 }
 
+func getHelperContainerName(cmd common.ExecutorCommand) string {
+	switch cmd.Stage {
+	case common.BuildStageRestoreCache, common.BuildStageArchiveOnSuccessCache, common.BuildStageArchiveOnFailureCache:
+		return cacheHelperContainerName
+	default:
+		return helperContainerName
+	}
+}
+
 func (s *executor) runWithExecLegacy(cmd common.ExecutorCommand) error {
 	if s.pod == nil {
 		err := s.setupCredentials()
@@ -215,7 +225,7 @@ func (s *executor) runWithExecLegacy(cmd common.ExecutorCommand) error {
 	containerName := buildContainerName
 	containerCommand := s.BuildShell.DockerCommand
 	if cmd.Predefined {
-		containerName = helperContainerName
+		containerName = getHelperContainerName(cmd)
 		containerCommand = s.helperImageInfo.Cmd
 	}
 
@@ -262,7 +272,7 @@ func (s *executor) runWithAttach(cmd common.ExecutorCommand) error {
 		s.buildCommandForStage(cmd.Stage),
 	}
 	if cmd.Predefined {
-		containerName = helperContainerName
+		containerName = getHelperContainerName(cmd)
 		// We use redirection here since the "gitlab-runner-build" helper doesn't pass input args
 		// to the shell it executes, so we technically pass the script to the stdin of the underlying shell
 		// translates roughly to "gitlab-runner-build <<< /stage/script/path.sh"
@@ -486,6 +496,7 @@ func (s *executor) buildContainer(
 	name, image string,
 	imageDefinition common.Image,
 	requests, limits api.ResourceList,
+	env []api.EnvVar,
 	containerCommand ...string,
 ) api.Container {
 	privileged := false
@@ -524,7 +535,7 @@ func (s *executor) buildContainer(
 		ImagePullPolicy: api.PullPolicy(s.pullPolicy),
 		Command:         command,
 		Args:            args,
-		Env:             buildVariables(s.Build.GetAllVariables().PublicOrInternal()),
+		Env:             env,
 		Resources: api.ResourceRequirements{
 			Limits:   limits,
 			Requests: requests,
@@ -865,6 +876,8 @@ func (s *executor) setupBuildPod(initContainers []api.Container) error {
 
 	podServices := make([]api.Container, len(s.options.Services))
 
+	env := buildVariables(s.Build.GetAllVariables().PublicOrInternal())
+
 	for i, service := range s.options.Services {
 		resolvedImage := s.Build.GetAllVariables().ExpandValue(service.Name)
 		podServices[i] = s.buildContainer(
@@ -873,6 +886,7 @@ func (s *executor) setupBuildPod(initContainers []api.Container) error {
 			service,
 			s.configurationOverwrites.serviceRequests,
 			s.configurationOverwrites.serviceLimits,
+			env,
 		)
 	}
 
@@ -919,6 +933,42 @@ func (s *executor) setupBuildPod(initContainers []api.Container) error {
 	return nil
 }
 
+func (s *executor) getPodContainers() []api.Container {
+	buildImage := s.Build.GetAllVariables().ExpandValue(s.options.Image.Name)
+	standardEnv := buildVariables(s.Build.GetAllVariables().PublicOrInternal())
+
+	return []api.Container{
+		// TODO use the build and helper template here
+		s.buildContainer(
+			buildContainerName,
+			buildImage,
+			s.options.Image,
+			s.configurationOverwrites.buildRequests,
+			s.configurationOverwrites.buildLimits,
+			standardEnv,
+			s.BuildShell.DockerCommand...,
+		),
+		s.buildContainer(
+			helperContainerName,
+			s.getHelperImage(),
+			common.Image{},
+			s.configurationOverwrites.helperRequests,
+			s.configurationOverwrites.helperLimits,
+			standardEnv,
+			s.BuildShell.DockerCommand...,
+		),
+		s.buildContainer(
+			cacheHelperContainerName,
+			s.getHelperImage(),
+			common.Image{},
+			s.configurationOverwrites.helperRequests,
+			s.configurationOverwrites.helperLimits,
+			buildVariables(s.Build.GetCacheHelperVariables()),
+			s.BuildShell.DockerCommand...,
+		),
+	}
+}
+
 func (s *executor) preparePodConfig(
 	labels, annotations map[string]string,
 	services []api.Container,
@@ -926,8 +976,6 @@ func (s *executor) preparePodConfig(
 	hostAliases []api.HostAlias,
 	initContainers []api.Container,
 ) api.Pod {
-	buildImage := s.Build.GetAllVariables().ExpandValue(s.options.Image.Name)
-
 	pod := api.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: s.Build.ProjectUniqueName(),
@@ -936,31 +984,13 @@ func (s *executor) preparePodConfig(
 			Annotations:  annotations,
 		},
 		Spec: api.PodSpec{
-			Volumes:            s.getVolumes(),
-			ServiceAccountName: s.configurationOverwrites.serviceAccount,
-			RestartPolicy:      api.RestartPolicyNever,
-			NodeSelector:       s.Config.Kubernetes.NodeSelector,
-			Tolerations:        s.Config.Kubernetes.GetNodeTolerations(),
-			InitContainers:     initContainers,
-			Containers: append([]api.Container{
-				// TODO use the build and helper template here
-				s.buildContainer(
-					buildContainerName,
-					buildImage,
-					s.options.Image,
-					s.configurationOverwrites.buildRequests,
-					s.configurationOverwrites.buildLimits,
-					s.BuildShell.DockerCommand...,
-				),
-				s.buildContainer(
-					helperContainerName,
-					s.getHelperImage(),
-					common.Image{},
-					s.configurationOverwrites.helperRequests,
-					s.configurationOverwrites.helperLimits,
-					s.BuildShell.DockerCommand...,
-				),
-			}, services...),
+			Volumes:                       s.getVolumes(),
+			ServiceAccountName:            s.configurationOverwrites.serviceAccount,
+			RestartPolicy:                 api.RestartPolicyNever,
+			NodeSelector:                  s.Config.Kubernetes.NodeSelector,
+			Tolerations:                   s.Config.Kubernetes.GetNodeTolerations(),
+			InitContainers:                initContainers,
+			Containers:                    append(s.getPodContainers(), services...),
 			TerminationGracePeriodSeconds: &s.Config.Kubernetes.TerminationGracePeriodSeconds,
 			ImagePullSecrets:              imagePullSecrets,
 			SecurityContext:               s.Config.Kubernetes.GetPodSecurityContext(),

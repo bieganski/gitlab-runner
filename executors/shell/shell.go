@@ -99,7 +99,7 @@ func (s *executor) runLegacy(cmd common.ExecutorCommand) error {
 	c.Env = append(os.Environ(), s.BuildShell.Environment...)
 	// These variables should take precedence since they are private environment variables
 	// for specific build stages.
-	c.Env = append(c.Env, cmd.AdditionalEnv...)
+	c.Env = append(c.Env, cmd.AdditionalEnv.StringList()...)
 
 	c.Stdout = s.Trace
 	c.Stderr = s.Trace
@@ -171,7 +171,7 @@ func (s *executor) run(cmd common.ExecutorCommand) error {
 	env := append(os.Environ(), s.BuildShell.Environment...)
 	// These variables should take precedence since they are private environment variables
 	// for specific build stages.
-	env = append(env, cmd.AdditionalEnv...)
+	env = append(env, cmd.AdditionalEnv.StringList()...)
 	cmdOpts := process.CommandOptions{
 		Env:    env,
 		Stdout: s.Trace,

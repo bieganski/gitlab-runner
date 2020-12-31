@@ -2283,7 +2283,7 @@ func TestSetupBuildPod(t *testing.T) {
 				},
 			},
 			VerifyFn: func(t *testing.T, test setupBuildPodTestDef, pod *api.Pod) {
-				require.Len(t, pod.Spec.Containers, 4)
+				require.Len(t, pod.Spec.Containers, 5)
 
 				assert.Equal(t, "build", pod.Spec.Containers[0].Name)
 				assert.Equal(t, "test-image", pod.Spec.Containers[0].Image)
@@ -2295,15 +2295,20 @@ func TestSetupBuildPod(t *testing.T) {
 				assert.Empty(t, pod.Spec.Containers[1].Command, "Helper container command should be empty")
 				assert.Empty(t, pod.Spec.Containers[1].Args, "Helper container args should be empty")
 
-				assert.Equal(t, "svc-0", pod.Spec.Containers[2].Name)
-				assert.Equal(t, "test-service", pod.Spec.Containers[2].Image)
-				assert.Equal(t, []string{"/init", "run"}, pod.Spec.Containers[2].Command)
-				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[2].Args)
+				assert.Equal(t, "cache-helper", pod.Spec.Containers[2].Name)
+				assert.Equal(t, "custom/helper-image", pod.Spec.Containers[2].Image)
+				assert.Empty(t, pod.Spec.Containers[2].Command, "Helper container command should be empty")
+				assert.Empty(t, pod.Spec.Containers[2].Args, "Helper container args should be empty")
 
-				assert.Equal(t, "svc-1", pod.Spec.Containers[3].Name)
-				assert.Equal(t, "test-service-2", pod.Spec.Containers[3].Image)
-				assert.Empty(t, pod.Spec.Containers[3].Command, "Service container command should be empty")
+				assert.Equal(t, "svc-0", pod.Spec.Containers[3].Name)
+				assert.Equal(t, "test-service", pod.Spec.Containers[3].Image)
+				assert.Equal(t, []string{"/init", "run"}, pod.Spec.Containers[3].Command)
 				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[3].Args)
+
+				assert.Equal(t, "svc-1", pod.Spec.Containers[4].Name)
+				assert.Equal(t, "test-service-2", pod.Spec.Containers[4].Image)
+				assert.Empty(t, pod.Spec.Containers[4].Command, "Service container command should be empty")
+				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[4].Args)
 			},
 		},
 		"creates services in kubernetes if ports are set": {
@@ -2625,7 +2630,7 @@ func TestSetupBuildPod(t *testing.T) {
 				},
 			},
 			VerifyFn: func(t *testing.T, test setupBuildPodTestDef, pod *api.Pod) {
-				require.Len(t, pod.Spec.Containers, 5)
+				require.Len(t, pod.Spec.Containers, 6)
 
 				assert.Equal(t, "build", pod.Spec.Containers[0].Name)
 				assert.Equal(t, "test-image", pod.Spec.Containers[0].Image)
@@ -2637,20 +2642,25 @@ func TestSetupBuildPod(t *testing.T) {
 				assert.Empty(t, pod.Spec.Containers[1].Command, "Helper container command should be empty")
 				assert.Empty(t, pod.Spec.Containers[1].Args, "Helper container args should be empty")
 
-				assert.Equal(t, "svc-0", pod.Spec.Containers[2].Name)
-				assert.Equal(t, "test-service-0", pod.Spec.Containers[2].Image)
-				assert.Empty(t, pod.Spec.Containers[2].Command, "Service container command should be empty")
-				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[2].Args)
+				assert.Equal(t, "cache-helper", pod.Spec.Containers[2].Name)
+				assert.Equal(t, "custom/helper-image", pod.Spec.Containers[2].Image)
+				assert.Empty(t, pod.Spec.Containers[2].Command, "Helper container command should be empty")
+				assert.Empty(t, pod.Spec.Containers[2].Args, "Helper container args should be empty")
 
-				assert.Equal(t, "svc-1", pod.Spec.Containers[3].Name)
-				assert.Equal(t, "test-service-1", pod.Spec.Containers[3].Image)
-				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[3].Command)
-				assert.Empty(t, pod.Spec.Containers[3].Args, "Service container args should be empty")
+				assert.Equal(t, "svc-0", pod.Spec.Containers[3].Name)
+				assert.Equal(t, "test-service-0", pod.Spec.Containers[3].Image)
+				assert.Empty(t, pod.Spec.Containers[3].Command, "Service container command should be empty")
+				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[3].Args)
 
-				assert.Equal(t, "svc-2", pod.Spec.Containers[4].Name)
-				assert.Equal(t, "test-service-2", pod.Spec.Containers[4].Image)
+				assert.Equal(t, "svc-1", pod.Spec.Containers[4].Name)
+				assert.Equal(t, "test-service-1", pod.Spec.Containers[4].Image)
 				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[4].Command)
-				assert.Equal(t, []string{"argument1", "argument2"}, pod.Spec.Containers[4].Args)
+				assert.Empty(t, pod.Spec.Containers[4].Args, "Service container args should be empty")
+
+				assert.Equal(t, "svc-2", pod.Spec.Containers[5].Name)
+				assert.Equal(t, "test-service-2", pod.Spec.Containers[5].Image)
+				assert.Equal(t, []string{"application", "--debug"}, pod.Spec.Containers[5].Command)
+				assert.Equal(t, []string{"argument1", "argument2"}, pod.Spec.Containers[5].Args)
 			},
 		},
 		"non-DNS-1123-compatible-token": {
@@ -2926,7 +2936,7 @@ func TestSetupBuildPod(t *testing.T) {
 				e.featureChecker = mockFc
 			},
 			VerifyFn: func(t *testing.T, test setupBuildPodTestDef, pod *api.Pod) {
-				assert.Len(t, pod.Spec.Containers, 3)
+				assert.Len(t, pod.Spec.Containers, 4)
 				assert.Nil(t, pod.Spec.HostAliases)
 			},
 		},
@@ -3096,7 +3106,7 @@ func TestSetupBuildPod(t *testing.T) {
 				},
 			},
 			VerifyFn: func(t *testing.T, test setupBuildPodTestDef, pod *api.Pod) {
-				require.Len(t, pod.Spec.Containers, 4)
+				require.Len(t, pod.Spec.Containers, 5)
 
 				assertContainerCap := func(container api.Container) {
 					t.Run("container-"+container.Name, func(t *testing.T) {
