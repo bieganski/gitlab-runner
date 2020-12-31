@@ -132,7 +132,7 @@ func (s *commandExecutor) requestNewPredefinedContainer(cmd common.ExecutorComma
 		buildImage,
 		s.getHelperImageCmd(),
 		[]string{prebuildImage.ID},
-		cmd.AdditionalEnv,
+		cmd.AdditionalEnv.StringList(),
 	)
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (s *commandExecutor) requestBuildContainer(cmd common.ExecutorCommand) (*ty
 		s.Build.Image,
 		s.BuildShell.DockerCommand,
 		[]string{},
-		cmd.AdditionalEnv,
+		cmd.AdditionalEnv.StringList(),
 	)
 	if err != nil {
 		return nil, err
