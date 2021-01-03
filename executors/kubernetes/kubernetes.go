@@ -935,7 +935,9 @@ func (s *executor) setupBuildPod(initContainers []api.Container) error {
 
 func (s *executor) getPodContainers() []api.Container {
 	buildImage := s.Build.GetAllVariables().ExpandValue(s.options.Image.Name)
-	standardEnv := buildVariables(s.Build.GetAllVariables().PublicOrInternal())
+	buildVars := s.Build.GetAllVariables().PublicOrInternal()
+	standardEnv := buildVariables(buildVars)
+	cacheEnv := append(standardEnv, buildVariables(s.Build.GetCacheHelperVariables())...)
 
 	return []api.Container{
 		// TODO use the build and helper template here
@@ -963,7 +965,7 @@ func (s *executor) getPodContainers() []api.Container {
 			common.Image{},
 			s.configurationOverwrites.helperRequests,
 			s.configurationOverwrites.helperLimits,
-			buildVariables(s.Build.GetCacheHelperVariables()),
+			cacheEnv,
 			s.BuildShell.DockerCommand...,
 		),
 	}
