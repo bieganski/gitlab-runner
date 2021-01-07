@@ -72,7 +72,6 @@ out of the scope of this documentation. For more details please read the
 1. Edit [`config.toml`](../commands/README.md#configuration-file) and configure
    the runner to use Docker machine. Visit the dedicated page covering detailed
    information about [GitLab Runner Autoscaling](../configuration/autoscale.md).
-
 1. Now, you can try and start a new pipeline in your project. In a few seconds,
    if you run `docker-machine ls` you should see a new machine being created.
 
