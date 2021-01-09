@@ -56,7 +56,7 @@ func TestGetCredentials(t *testing.T) {
 				assert.Equal(t, tt.s3.AccessKey, creds["AWS_ACCESS_KEY_ID"])
 				assert.Equal(t, tt.s3.SecretKey, creds["AWS_SECRET_ACCESS_KEY"])
 			} else {
-				assert.Equal(t, 0, len(creds))
+				assert.Empty(t, creds)
 			}
 		})
 	}

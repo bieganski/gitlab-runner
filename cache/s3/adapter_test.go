@@ -18,7 +18,12 @@ import (
 var defaultTimeout = 1 * time.Hour
 var bucketName = "test"
 var objectName = "key"
-var bucketLocation = "location"
+
+const (
+	bucketName     = "test"
+	objectName     = "key"
+	bucketLocation = "location"
+)
 
 func defaultCacheFactory() *common.CacheConfig {
 	return &common.CacheConfig{
@@ -97,7 +102,7 @@ func testCacheOperation(
 		assert.Empty(t, adapter.GetUploadEnv())
 
 		url := adapter.GetGoCloudURL()
-		assert.NotNil(t, url)
+		require.NotNil(t, url)
 		assert.Equal(t, "s3", url.Scheme)
 		assert.Equal(t, bucketName, url.Host)
 		assert.Equal(t, objectName, url.Path)
