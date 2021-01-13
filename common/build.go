@@ -426,7 +426,6 @@ func (b *Build) getAdditionalEnv(buildStage BuildStage) JobVariables {
 	}
 
 	return JobVariables{}
-
 }
 
 func GetStageDescription(stage BuildStage) string {
