@@ -37,11 +37,12 @@ func (b *Buffer) SetMasked(values []string) {
 		b.w.Close()
 	}
 
-	transformers := make([]transform.Transformer, 0, len(values))
+	transformers := make([]transform.Transformer, 0, len(values)+1)
 
 	for _, value := range values {
 		transformers = append(transformers, newPhraseTransform(value))
 	}
+	transformers = append(transformers, NewSensitiveURLParamTransform())
 
 	b.w = transform.NewWriter(b.lw, transform.Chain(transformers...))
 }
