@@ -32,10 +32,12 @@ func (s *Trace) Write(p []byte) (n int, err error) {
 func (s *Trace) SetMasked(values []string) {
 }
 
-func (s *Trace) Success() {
+func (s *Trace) Success() error {
+	return nil
 }
 
-func (s *Trace) Fail(err error, failureData JobFailureData) {
+func (s *Trace) Fail(_ error, _ JobFailureData) error {
+	return nil
 }
 
 func (s *Trace) SetCancelFunc(cancelFunc context.CancelFunc) {
