@@ -81,22 +81,18 @@ func TestVariablesMaskingBoundary(t *testing.T) {
 		},
 		//nolint:lll
 		{
-			input:    "a really long sensitive URL http://example.com/?x-amz-credential=" + strings.Repeat("0", sensitiveURLMaxTokenSize-len("x-amz-credential=")),
-			expected: "a really long sensitive URL http://example.com/?x-amz-credential=[MASKED]",
+			input:    "a really long sensitive URL http://example.com/?x-amz-credential=" + strings.Repeat("0", 8*1024) + " that is still scrubbed",
+			expected: "a really long sensitive URL http://example.com/?x-amz-credential=[MASKED] that is still scrubbed",
 		},
 		//nolint:lll
 		{
-			input:    "a sensitive URL containing a token too long to scrub http://example.com/?x-amz-credential=" + strings.Repeat("0", sensitiveURLMaxTokenSize-len("x-amz-credential=")+1),
-			expected: "a sensitive URL containing a token too long to scrub http://example.com/?x-amz-credential=" + strings.Repeat("0", sensitiveURLMaxTokenSize-len("x-amz-credential=")+1),
+			input:    "spl|it sensit|ive UR|L http://example.com/?x-amz-cred|ential=abcdefghij|klmnopqrstuvwxyz01234567",
+			expected: "split sensitive URL http://example.com/?x-amz-credential=[MASKED]",
 		},
 		{
 			input:    "sp|lit al|l val|ues ar|e |mask|ed",
 			values:   []string{"split", "all", "values", "are", "masked"},
 			expected: "[MASKED] [MASKED] [MASKED] [MASKED] [MASKED]",
-		},
-		{
-			input:    "spl|it sensit|ive UR|L http://example.com/?x-amz-cred|ential=abcdefghij|klmnopqrstuvwxyz01234567",
-			expected: "split sensitive URL http://example.com/?x-amz-credential=[MASKED]",
 		},
 	}
 
@@ -134,15 +130,15 @@ func TestMaskNonEOFSafeBoundary(t *testing.T) {
 	}{
 		{
 			input:    "cannot safely flush: secret secre",
-			expected: "cannot safely flush: [MASKED]",
+			expected: "cannot saf",
 		},
 		{
 			input:    "cannot safely flush: secret secre!",
-			expected: "cannot safely flush: [MASKED]",
+			expected: "cannot saf",
 		},
 		{
 			input:    "cannot safely flush: secret secre\t",
-			expected: "cannot safely flush: [MASKED]",
+			expected: "cannot saf",
 		},
 		{
 			input:    "can safely flush: secret secre\r",
