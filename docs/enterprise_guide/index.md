@@ -134,10 +134,10 @@ The following section provides example customer implementations of runner fleets
 - Instance-Level (Shared Runners): The customer's operations team provides Shared Runners for everyone. In one instance, there are ~60 Shared Runners deployed.
 - Group Runners: At the group (team) level, each team manages their own runners.
 - There is a dedicated Shared Runner cluster on OpenStack for hosting the instance-level (Shared Runners). 
-    - Prometheus metrics
-    - Basic shared runners offered with various virtual machine sizes:
-      - small: 1 vCPU, 4GB memory, 20GB storage
-      - medium: 2 vCPU, 4GB memory, 20GB storage 
-      - large: 4 vCPU, 8GB memory, 40GB storage
-      - large: 8 vCPU, 16GB memory, 50GB storage
+- Basic shared runners offered with various virtual machine sizes:
+  - small: 1 vCPU, 4GB memory, 20GB storage
+  - medium: 2 vCPU, 4GB memory, 20GB storage 
+  - large: 4 vCPU, 8GB memory, 40GB storage
+  - large: 8 vCPU, 16GB memory, 50GB storage
+      
  
