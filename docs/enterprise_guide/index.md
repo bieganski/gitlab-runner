@@ -115,7 +115,7 @@ An essential step in operating a GitLab runner fleet at scale, as is our experie
 
 ### Alerting
 
-The team at [Radio France]() has configured the following alerts in their monitoring system. This is a resonable starting point for establishing a solid monitoring framework that you can use to effectively operate a GitLab Runner fleert at scale.
+The team at [Radio France](https://medium.com/radio-france-engineering/on-demand-ci-cd-with-gitlab-and-kubernetes-1d395105ac45) has configured the following alerts in their monitoring system. This is a resonable starting point for establishing a solid monitoring framework that you can use to effectively operate a GitLab Runner fleert at scale.
 
 - Alert when the number of pending jobs is above X for more than Y minutes.
 - Alert when the rate of gitlab “system” failure is above X for more than Y minutes. 
