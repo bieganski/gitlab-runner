@@ -21,7 +21,7 @@ This guide provides a structured approach to developing a GitLab Runner deployme
 
 We expect that there will be different infrastructure stacks chosen to host runner fleets, (public cloud, on-premise). It is critical to note that the performance of the CI jobs on the runner fleet is directly related to the fleet's environment. Hosting the fleet on a shared computing platform is not recommended for organizations executing a high number of resource-intensive CI jobs.
 
-## Understanding workers, executors and autoscaling capabilities.
+## Understanding workers, executors and autoscaling capabilities
 
 Let's take a minute to discuss in more detail some key concepts about the runner. As described earlier, `gitlab-runner` is the exectuable that executes your ci jobs. That's true, but its also a very flexible and powerful piece of software. Each runner is an isolated process responsible for picking up requests for job executions and dealing with them according to pre-defined configurations. As an isolated process, each runner can create 'sub-processes' (also called machines or workers) to run jobs. In the next section we describe setting up a most basic runner configuration so as to set the stage for discussions regarding more advanced configuration options.
 
@@ -103,11 +103,11 @@ The total number of runner managers that you may need over time will depend on t
 
 ## Monitoring GitLab Runners
 
-An essential step in operating a GitLab Runner fleet at scale, as is our experience handling millions of CI jobs monthly on GitLab.com, is to set up and use the [**GitLab Runner monitoring**](../monitoring/index.md) capabilities included with GitLab.
+An essential step in operating a GitLab Runner fleet at scale, as is our experience handling millions of CI jobs monthly on GitLab.com, is to set up and use the [**GitLab Runner monitoring**](../monitoring/README.md) capabilities included with GitLab. 
+
+### How to prepare the Prometheus monitoring stack
 
 {What we are missing is a step by step tutorial on how to monitor GitLab CI on the RAILS side and the GitLab Runner side.}
-
-### How to prepare the Prometheus monitoring stack.
 
 1. Step 1:Enable Prometheus on each runner manager.
 1. Step 2:{placeholder}
@@ -127,7 +127,7 @@ The logic behind the system failure metric is that, a high rate of `system failu
 
 The following section provides example customer implementations of runner fleets.
 
-### Customer A: 
+### Customer A
 
 - Multiple GitLab instances, 5000+ projects
 - Tech stack = OpenStack, VMWare, OpenShift.
