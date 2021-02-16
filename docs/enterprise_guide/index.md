@@ -139,5 +139,4 @@ The following section provides example customer implementations of runner fleets
   - medium: 2 vCPU, 4GB memory, 20GB storage 
   - large: 4 vCPU, 8GB memory, 40GB storage
   - large: 8 vCPU, 16GB memory, 50GB storage
-      
- 
+  
