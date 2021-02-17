@@ -4,7 +4,7 @@ group: Runner
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
 ---
 
-# Scale a fleet of runners for your enterprise
+# Considerations for scaling a fleet of runners for your enterprise
 
 When you host a fleet of runners, you need a well-planned infrastructure that takes
 into consideration your:
