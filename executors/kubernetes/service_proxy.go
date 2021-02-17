@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -66,7 +67,7 @@ func (s *executor) ProxyRequest(
 }
 
 func (s *executor) servicesRunning() bool {
-	pod, err := s.kubeClient.CoreV1().Pods(s.pod.Namespace).Get(s.pod.Name, metav1.GetOptions{})
+	pod, err := s.kubeClient.CoreV1().Pods(s.pod.Namespace).Get(context.Background(), s.pod.Name, metav1.GetOptions{})
 	if err != nil || pod.Status.Phase != runningState {
 		return false
 	}
@@ -151,7 +152,7 @@ func proxyHTTPRequest(
 		return
 	}
 
-	body, err := req.Stream()
+	body, err := req.Stream(context.Background())
 	if err != nil {
 		message, code := handleProxyHTTPErr(err, logger)
 		w.WriteHeader(code)

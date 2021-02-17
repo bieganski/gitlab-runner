@@ -93,7 +93,7 @@ type AttachOptions struct {
 
 // Run executes a validated remote execution against a pod.
 func (p *AttachOptions) Run() error {
-	pod, err := p.Client.CoreV1().Pods(p.Namespace).Get(p.PodName, metav1.GetOptions{})
+	pod, err := p.Client.CoreV1().Pods(p.Namespace).Get(context.Background(), p.PodName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("couldn't get pod details: %w", err)
 	}
@@ -159,7 +159,7 @@ type ExecOptions struct {
 
 // Run executes a validated remote execution against a pod.
 func (p *ExecOptions) Run() error {
-	pod, err := p.Client.CoreV1().Pods(p.Namespace).Get(p.PodName, metav1.GetOptions{})
+	pod, err := p.Client.CoreV1().Pods(p.Namespace).Get(context.Background(), p.PodName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("couldn't get pod details: %w", err)
 	}

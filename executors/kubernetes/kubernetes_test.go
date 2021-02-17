@@ -770,7 +770,7 @@ func testInteractiveTerminalFeatureFlag(t *testing.T, featureFlagName string, fe
 	}
 
 	client := getTestKubeClusterClient(t)
-	secrets, err := client.CoreV1().Secrets("default").List(metav1.ListOptions{})
+	secrets, err := client.CoreV1().Secrets("default").List(context.Background(), metav1.ListOptions{})
 	require.NoError(t, err)
 
 	build := getTestBuild(t, func() (common.JobResponse, error) {
@@ -3825,13 +3825,18 @@ func TestDeletedPodSystemFailureDuringExecution(t *testing.T) {
 			deletedPodCh := make(chan string)
 			defer buildtest.OnStage(build, tt.stage, func() {
 				client := getTestKubeClusterClient(t)
-				pods, err := client.CoreV1().Pods("default").List(metav1.ListOptions{
-					LabelSelector: labels.Set(build.Runner.Kubernetes.PodLabels).String(),
-				})
+				pods, err := client.CoreV1().Pods("default").List(
+					context.Background(),
+					metav1.ListOptions{
+						LabelSelector: labels.Set(build.Runner.Kubernetes.PodLabels).String(),
+					},
+				)
 				require.NoError(t, err)
 				require.NotEmpty(t, pods.Items)
 				pod := pods.Items[0]
-				err = client.CoreV1().Pods("default").Delete(pod.Name, &metav1.DeleteOptions{})
+				err = client.CoreV1().
+					Pods("default").
+					Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 				require.NoError(t, err)
 
 				deletedPodCh <- pod.Name

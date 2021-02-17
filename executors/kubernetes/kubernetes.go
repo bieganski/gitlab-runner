@@ -399,7 +399,10 @@ func (s *executor) setupScriptsConfigMap() error {
 		Data: scripts,
 	}
 
-	s.configMap, err = s.kubeClient.CoreV1().ConfigMaps(s.configurationOverwrites.namespace).Create(configMap)
+	s.configMap, err = s.kubeClient.
+		CoreV1().
+		ConfigMaps(s.configurationOverwrites.namespace).
+		Create(context.Background(), configMap, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("generating scripts config map: %w", err)
 	}
@@ -468,13 +471,16 @@ func (s *executor) deleteKubernetesService(serviceName string, ch chan<- service
 
 	err := s.kubeClient.CoreV1().
 		Services(s.configurationOverwrites.namespace).
-		Delete(serviceName, &metav1.DeleteOptions{})
+		Delete(context.Background(), serviceName, metav1.DeleteOptions{})
 	ch <- serviceDeleteResponse{serviceName: serviceName, err: err}
 }
 
 func (s *executor) cleanupResources() {
 	if s.pod != nil {
-		err := s.kubeClient.CoreV1().Pods(s.pod.Namespace).Delete(s.pod.Name, &metav1.DeleteOptions{})
+		err := s.kubeClient.
+			CoreV1().
+			Pods(s.pod.Namespace).
+			Delete(context.Background(), s.pod.Name, metav1.DeleteOptions{})
 		if err != nil {
 			s.Errorln(fmt.Sprintf("Error cleaning up pod: %s", err.Error()))
 		}
@@ -482,7 +488,7 @@ func (s *executor) cleanupResources() {
 	if s.credentials != nil {
 		err := s.kubeClient.CoreV1().
 			Secrets(s.configurationOverwrites.namespace).
-			Delete(s.credentials.Name, &metav1.DeleteOptions{})
+			Delete(context.Background(), s.credentials.Name, metav1.DeleteOptions{})
 		if err != nil {
 			s.Errorln(fmt.Sprintf("Error cleaning up secrets: %s", err.Error()))
 		}
@@ -490,7 +496,7 @@ func (s *executor) cleanupResources() {
 	if s.configMap != nil {
 		err := s.kubeClient.CoreV1().
 			ConfigMaps(s.configurationOverwrites.namespace).
-			Delete(s.configMap.Name, &metav1.DeleteOptions{})
+			Delete(context.Background(), s.configMap.Name, metav1.DeleteOptions{})
 		if err != nil {
 			s.Errorln(fmt.Sprintf("Error cleaning up configmap: %s", err.Error()))
 		}
@@ -851,7 +857,10 @@ func (s *executor) setupCredentials() error {
 	secret.Data = map[string][]byte{}
 	secret.Data[api.DockerConfigKey] = dockerCfgContent
 
-	creds, err := s.kubeClient.CoreV1().Secrets(s.configurationOverwrites.namespace).Create(&secret)
+	creds, err := s.kubeClient.
+		CoreV1().
+		Secrets(s.configurationOverwrites.namespace).
+		Create(context.Background(), &secret, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -920,7 +929,10 @@ func (s *executor) setupBuildPod(initContainers []api.Container) error {
 	podConfig := s.preparePodConfig(labels, annotations, podServices, imagePullSecrets, hostAliases, initContainers)
 
 	s.Debugln("Creating build pod")
-	pod, err := s.kubeClient.CoreV1().Pods(s.configurationOverwrites.namespace).Create(&podConfig)
+	pod, err := s.kubeClient.
+		CoreV1().
+		Pods(s.configurationOverwrites.namespace).
+		Create(context.Background(), &podConfig, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -1071,7 +1083,10 @@ func (s *executor) createKubernetesService(
 ) {
 	defer wg.Done()
 
-	service, err := s.kubeClient.CoreV1().Services(s.pod.Namespace).Create(service)
+	service, err := s.kubeClient.
+		CoreV1().
+		Services(s.pod.Namespace).
+		Create(context.Background(), service, metav1.CreateOptions{})
 	if err == nil {
 		// Updating the internal service name reference and activating the proxy
 		proxySettings.ServiceName = service.Name
@@ -1109,7 +1124,10 @@ func (s *executor) watchPodStatus(ctx context.Context) <-chan error {
 }
 
 func (s *executor) checkPodStatus() error {
-	pod, err := s.kubeClient.CoreV1().Pods(s.pod.Namespace).Get(s.pod.Name, metav1.GetOptions{})
+	pod, err := s.kubeClient.
+		CoreV1().
+		Pods(s.pod.Namespace).
+		Get(context.Background(), s.pod.Name, metav1.GetOptions{})
 	if isKubernetesPodNotFoundError(err) {
 		return err
 	}
