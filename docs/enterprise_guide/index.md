@@ -27,7 +27,7 @@ Let's take a minute to discuss in more detail some key concepts about the runner
 
 ### Basic configuration (one runner, one worker)
 
--For the most basic configuration lets say you install the GitLab Runner software on a supported host and operating system. 
+- For the most basic configuration lets say you install the GitLab Runner software on a supported host and operating system. 
 
 - After the install is complete, you execute the runner registration command just once and you select the `shell` executor. In the runner `config.toml` you set concurrency = 1.
 
@@ -123,7 +123,19 @@ The team at [Radio France](https://medium.com/radio-france-engineering/on-demand
 
 The logic behind the system failure metric is that, a high rate of `system failures` could indicate a more systemic issue with the runner fleet.
 
-## Example Runner Fleet Configurations
+## Complex runner deployment scenario (GitLab.com)
+
+The following section summarizes a few key points regarding the runner architecture on GitLab.com.
+
+- On GitLab.com, we use multiple runner managers for each build environment (Linux+Docker, Windows). 
+- This provides redundancy as if you have one runner manager, then it is a single point of failure.
+- For even additional fault tolerance, you can choose to host managers on different on-premise infrastructure stacks or take advantage of multi-region capabilities offered by your public cloud provider.
+- On GitLab.com, we also have multiple runner managers because as we provide runners with different characteristics.  
+- The GitLab.com Shared Linux Runner managers are hosts with the GitLab Runner executable configured to autoscale using Docker Machine and the Google Compute API.
+- The GitLab.com Shared Linux Runner managers are the only virtual machines that are always active. The autoscaled virtual machines are one-time use only - i.e., they are used for only one CI job and deleted immediately after the job completes.
+- The GitLab.com Prometheus environment ingests metrics from each runner manager. The GitLab.com infrastructure team uses these metrics to monitor CI job queues, operate and optimize the platform.
+
+## Customer Examples of Runner Fleet Configurations
 
 The following section provides example customer implementations of runner fleets.
 
