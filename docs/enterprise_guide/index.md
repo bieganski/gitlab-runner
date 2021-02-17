@@ -4,32 +4,56 @@ group: Runner
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
 ---
 
-# Enterprise guide for deploying and scaling a GitLab Runner Fleet
+# Scale a fleet of runners for your enterprise
 
-GitLab Runners, a software agent, executes the build jobs defined in your GitLab CI pipeline either using a local shell or container. Hosting a runner fleet requires a well-planned infrastructure that needs to include considerations for computing capacity, storage, network bandwidth and throughput. 
+When you host a fleet of runners, you need a well-planned infrastructure that takes
+into consideration your:
 
-This guide provides a structured approach to developing a GitLab Runner deployment strategy based on your organization's requirements. The guide does not make specific recommendations regarding the type of infrastructure you should use for hosting a runner fleet. However, it provides tips and insights from our experience in operating the runner fleet on GitLab.com, which processes millions of CI jobs monthly.
+- Computing capacity.
+- Storage capacity.
+- Network bandwidth and throughput. 
+
+This guide provides a structured approach to developing a GitLab Runner deployment strategy
+based on your organization's requirements. The guide does not make specific recommendations
+about the type of infrastructure you should use. However, it provides tips and insights from
+the experience of operating the runner fleet on GitLab.com, which processes millions of
+CI/CD jobs each month.
 
 ## Planning Checklist
 
-- [ ] Create a list of the number of teams that will be using GitLab CI.
-- [ ] Catalog the programming languages, web frameworks, libraries in use at your organization. For example (GoLang, C++, PHP, Java, Python, JavaScript, React, Node.js).
-- [ ] Estimate the number of CI jobs each team may execute per hour, per day.
-- [ ] Validate if any team has build environment requirements that cannot be addressed using containers. 
-- [ ] Validate if any team has build environment requirements that are best served by having runners dedicated to that team.
-- [ ] Estimate the compute capacity that you may need to support the expected CI demand.
+- <input type="checkbox"> Create a list of the teams that will use GitLab CI/CD.
+- <input type="checkbox"> Catalog the programming languages, web frameworks, and libraries in use
+  at your organization. For example, GoLang, C++, PHP, Java, Python, JavaScript, React, Node.js.
+- <input type="checkbox"> Estimate the number of CI/CD jobs each team may execute per hour, per day.
+- <input type="checkbox"> Validate if any team has build environment requirements that cannot be
+  addressed by using containers. 
+- <input type="checkbox"> Validate if any team has build environment requirements that are best served
+  by having runners dedicated to that team.
+- <input type="checkbox"> Estimate the compute capacity that you may need to support the expected demand.
 
-We expect that there will be different infrastructure stacks chosen to host runner fleets, (public cloud, on-premise). It is critical to note that the performance of the CI jobs on the runner fleet is directly related to the fleet's environment. Hosting the fleet on a shared computing platform is not recommended for organizations executing a high number of resource-intensive CI jobs.
+You will probably need different infrastructure stacks to host different runner fleets.
+For example, you may want some runners in the public cloud and some on-premise.
 
-## Understanding workers, executors and autoscaling capabilities
+The performance of the CI/CD jobs on the runner fleet is directly related to the fleet's environment.
+If you are executing a large number of resource-intensive CI/CD jobs, hosting the fleet on a shared
+computing platform is not recommended.
 
-Let's take a minute to discuss in more detail some key concepts about the runner. As described earlier, `gitlab-runner` is the exectuable that executes your ci jobs. That's true, but its also a very flexible and powerful piece of software. Each runner is an isolated process responsible for picking up requests for job executions and dealing with them according to pre-defined configurations. As an isolated process, each runner can create 'sub-processes' (also called machines or workers) to run jobs. In the next section we describe setting up a most basic runner configuration so as to set the stage for discussions regarding more advanced configuration options.
+## Workers, executors, and autoscaling capabilities
 
-### Basic configuration (one runner, one worker)
+The `gitlab-runner` executable is a flexible and powerful piece of software that runs your CI/CD jobs.
+Each runner is an isolated process responsible for picking up requests for job executions and dealing
+with them according to pre-defined configurations. As an isolated process, each runner can create
+"sub-processes" (also called "machines" or "workers") to run jobs.
 
-- For the most basic configuration lets say you install the GitLab Runner software on a supported host and operating system. 
+The next section describes how to set up a runner with very few configuration options.
+You can start with this configuration and then build on it.
 
-- After the install is complete, you execute the runner registration command just once and you select the `shell` executor. In the runner `config.toml` you set concurrency = 1.
+### Basic configuration: one runner, one worker
+
+For the most basic configuration, you install the GitLab Runner software on a supported host and operating system. 
+
+After the installation is complete, you execute the runner registration command just once
+and you select the `shell` executor. Then you edit the runner `config.toml` file to set concurrency to `1`.
 
 ```toml
 concurrent = 1
@@ -39,16 +63,20 @@ concurrent = 1
   url = ""
   token = ""
   executor = "shell"
-
 ```
 
-In this very basic configuration, the GitLab CI jobs that this runner can process will directly execute the host system on which you installed the runner. It's as if you were running the CI job commands yourself in a terminal. In this case, since you only executed the registration command one time, there will only be one [[runners]] section in `config.toml`. Assuming we now set the concurrency value to 1, this means that there will only be one runner  `worker` to execute CI jobs for the runner process on this system.
+The GitLab CI/CD jobs that this runner can process are executed directly on the host system where you installed the runner.
+It's as if you were running the CI/CD job commands yourself in a terminal. In this case, because you only executed the registration
+command one time, the `config.toml` file contains only one `[[runners]]` section. Assuming we set the concurrency value to `1`,
+only one runner "worker" can execute CI/CD jobs for the runner process on this system.
 
-### Intermediate configuration (one runner, multiple workers)
+### Intermediate configuration: one runner, multiple workers
 
-- Taking it a step further, you can also register multiple runner `workers` on this same machine. 
-- When this is done, you will notice multiple [[runner]] sections in the in the runner's `config.toml` file. 
-- Assuming that all of these additional runner `workers` are registered to use the shell executor, and we update the value of the global configuration option, `concurrent` to 3, this means that the upper limit of jobs that can run concurrently on this host is equal to three. 
+Taking it a step further, you can also register multiple runner workers on this same machine. 
+When this is done, the runner's `config.toml` file has multiple `[[runner]]` sections in it. 
+If all of the additional runner workers are registered to use the shell executor,
+and we update the value of the global configuration option, `concurrent`, to `3`, 
+the upper limit of jobs that can run concurrently on this host is equal to three. 
 
 ```toml
 concurrent = 3
@@ -73,37 +101,55 @@ concurrent = 3
 
 ```
 
-So you can register many runner `workers` on the same machine as each one is an isolated process. Of course the performance of the CI jobs that each worker is completely dependent on the compute capacity of the host system. In the next section we describe more advanced configurations for autoscaling runners.
+You can register many runner workers on the same machine, and each one is an isolated process.
+The performance of the CI/CD jobs for each worker is dependent on the compute capacity of the host system.
 
-### Autoscaling configuration (one or more runner managers, multiple workers)
+In the next section we describe more advanced configurations for autoscaling runners.
 
-In an autoscaling setup, you can configure the runner to act only as a manager using the `docker+machine` or `Kubernetes` executor. In this type of manager only configuration, this runner agent is itself not executing any CI jobs. 
+### Autoscaling configuration: one or more runner managers, multiple workers
 
-- **Docker+Machine executor:** in the `docker+machine` executor's case, the runner managers role is to, on-demand, provision VM instances with Docker installed. The CI jobs are executed on these virtual machines using Docker. We recommend testing the performance of your CI jobs on various machine types. You will also need to determine whether to optimize your choice of compute hosts based on speed or cost. 
+In an autoscaling setup, you can configure a runner to act as a manager of other runners.
+You can do this with the `docker-machine` or `Kubernetes` executor only. In this type of
+manager-only configuration, the runner agent is itself not executing any CI/CD jobs. 
 
-- **Kubernetes executor:** in the Kubernetes executor's case, the runner managers role is to provision Pods on the target Kubernetes cluster. Each Pod is where the CI job is executed, and is comprised of multiple containers. The Pods used for job execution will typically require more compute and memory resources than the POD used for hosting the runner manager.
+- **Docker Machine executor:** The runner manager provisions on-demand virtual machine instances that have Docker installed.
+  On these VMs, Docker executes the CI/CD jobs. You should test the performance of your CI/CD jobs
+  on various machine types. You should also decide whether to optimize your compute hosts based on speed or cost. 
+
+- **Kubernetes executor:** The runner manager provisions pods on the target Kubernetes cluster.
+  The CI/CD jobs are executed on each pod, which is comprised of multiple containers. The pods used for job execution
+  typically require more compute and memory resources than the pod that hosts the runner manager.
 
 ## Configure runners for your organization
 
-### Instance Level - Shared Runners
+### Instance-level shared runners
 
-- Starting with instance level (shared runners) in an autoscaling configuration is an efficient and effective option for providing a CI build infrastructure for your organization. However, from the analysis of your organization's requirements, you may determine that you need to plan for delivering runners at the group level. 
+Using instance-level shared runners in an autoscaling configuration is an efficient and effective way to start.
+However, from the analysis of your organization's requirements, you may find that you need to create runners at the group level.
 
-- The compute capacity of the infrastructure stack that you use for hosting the VM's or PODS that will execute the CI jobs will depend on the requirements you have captured as part of the planning checklist exercise and the technology stack you will use to host your runner fleet.
+The compute capacity of the infrastructure stack where you host your VMs or pods depends on:
 
-- It is also very likely that you will need to adjust the computing capacity once you actually start running CI workloads and analyze the performance data over time. On GitLab SaaS, we provision GCP n1-standard-1 instances with 3.75GB of RAM for CI jobs on Linux with the `docker executor`.
+- The requirements you captured as part of the planning checklist exercise.
+- The technology stack you use to host your runner fleet.
 
-- For configurations using instance-level, Shared Runners with an autoscaling executor, we recommend that you configure at minimum two runner managers to start. On GitLab.com we have been able to scale to millions of jobs per month using five runner managers. A snippet of the `config.toml` configuration file for GitLab.com is provided [here](https://docs.gitlab.com/ee/user/gitlab_com/#configtoml). 
+It is also likely that you will need to adjust the computing capacity after you start running CI/CD workloads
+and analyzing the performance over time. On GitLab.com, we provision GCP n1-standard-1 instances with 3.75GB
+of RAM for CI/CD jobs on Linux with the `docker` executor.
 
-The total number of runner managers that you may need over time will depend on the following factors:
+For configurations that use instance-level shared runners with an autoscaling executor,
+we recommend that you start with, at minimum, two runner managers. On GitLab.com, we have been able to scale to
+millions of jobs per month by using five runner managers. You can view
+[a snippet of the `config.toml` configuration file for GitLab.com](https://docs.gitlab.com/ee/user/gitlab_com/#configtoml). 
+
+The total number of runner managers that you may need over time depends on the following factors:
 
 - The compute resources of the stack hosting the runner managers.
 - The concurrency that you choose to configure for each runner manager.
-- The load that is generated by the CI jobs that each manager is executing, hourly, daily, monthly.
+- The load that is generated by the CI/CD jobs that each manager is executing hourly, daily, and monthly.
 
-## Monitoring GitLab Runners
+## Monitoring runners
 
-An essential step in operating a GitLab Runner fleet at scale, as is our experience handling millions of CI jobs monthly on GitLab.com, is to set up and use the [**GitLab Runner monitoring**](../monitoring/README.md) capabilities included with GitLab. 
+An essential step in operating a runner fleet at scale is to set up and use the [runner monitoring](../monitoring/README.md) capabilities included with GitLab. 
 
 ### How to prepare the Prometheus monitoring stack
 
@@ -116,26 +162,33 @@ An essential step in operating a GitLab Runner fleet at scale, as is our experie
 
 ### Alerting
 
-The team at [Radio France](https://medium.com/radio-france-engineering/on-demand-ci-cd-with-gitlab-and-kubernetes-1d395105ac45) has configured the following alerts in their monitoring system. This is a resonable starting point for establishing a solid monitoring framework that you can use to effectively operate a GitLab Runner fleert at scale.
+The team at [Radio France](https://medium.com/radio-france-engineering/on-demand-ci-cd-with-gitlab-and-kubernetes-1d395105ac45) has configured the following alerts in their monitoring system. This is a reasonable starting point for establishing a solid monitoring framework that you can use to effectively operate a runner fleet at scale.
 
-- Alert when the number of pending jobs is above X for more than Y minutes.
-- Alert when the rate of GitLab “system” failure is above X for more than Y minutes. 
+- Alert when the number of pending jobs is above `x` for more than `y` minutes.
+- Alert when the rate of GitLab “system” failure is above `x` for more than `y` minutes. 
 
-The logic behind the system failure metric is that, a high rate of `system failures` could indicate a more systemic issue with the runner fleet.
+The logic behind the system failure metric is that a high rate of `system failures` might indicate a systemic issue with the runner fleet.
 
 ## Complex runner deployment scenario (GitLab.com)
 
 The following section summarizes a few key points regarding the runner architecture on GitLab.com.
 
-- On GitLab.com, we use multiple runner managers for each build environment (Linux+Docker, Windows). 
-- This provides redundancy as if you have one runner manager, then it is a single point of failure.
-- For even additional fault tolerance, you can choose to host managers on different on-premise infrastructure stacks or take advantage of multi-region capabilities offered by your public cloud provider.
-- On GitLab.com, we also have multiple runner managers because as we provide runners with different characteristics.  
-- The GitLab.com Shared Linux Runner managers are hosts with the GitLab Runner executable configured to autoscale using Docker Machine and the Google Compute API.
-- The GitLab.com Shared Linux Runner managers are the only virtual machines that are always active. The autoscaled virtual machines are one-time use only - i.e., they are used for only one CI job and deleted immediately after the job completes.
-- The GitLab.com Prometheus environment ingests metrics from each runner manager. The GitLab.com infrastructure team uses these metrics to monitor CI job queues, operate and optimize the platform.
+GitLab.com uses multiple runner managers for each build environment (Linux+Docker, Windows). 
+These multiple runners provides redundancy. If you have only one runner manager, then it is a single point of failure.
+For additional fault tolerance, you can choose to host managers on different on-premise infrastructure stacks
+or take advantage of multi-region capabilities offered by your public cloud provider.
 
-## Customer Examples of Runner Fleet Configurations
+GitLab.com has multiple runner managers because it provides runners with different characteristics.
+The GitLab.com shared Linux runner managers are:
+
+- Hosts with the `gitlab-runner` executable configured to autoscale using Docker Machine and the Google Compute API.
+- The only virtual machines that are always active. The autoscaled virtual machines are one-time use only.
+  They are used for only one CI/CD job and deleted immediately after the job completes.
+
+The GitLab.com Prometheus environment ingests metrics from each runner manager. The GitLab.com infrastructure team
+uses these metrics to monitor CI/CD job queues, and to operate and optimize the platform.
+
+## Customer examples of runner fleet configurations
 
 The following section provides example customer implementations of runner fleets.
 
@@ -143,9 +196,10 @@ The following section provides example customer implementations of runner fleets
 
 - Multiple GitLab instances, 5000+ projects
 - Tech stack = OpenStack, VMWare, OpenShift.
-- Instance-Level (Shared Runners): The customer's operations team provides Shared Runners for everyone. In one instance, there are ~60 Shared Runners deployed.
-- Group Runners: At the group (team) level, each team manages their own runners.
-- There is a dedicated Shared Runner cluster on OpenStack for hosting the instance-level (Shared Runners). 
+- Instance-level shared runners): The customer's operations team provides shared runners for everyone.
+  In one instance, there are approximately 60 shared runners deployed.
+- Group runners: At the group (team) level, each team manages their own runners.
+- There is a dedicated shared runner cluster on OpenStack for hosting the instance-level shared runners. 
 - Basic shared runners offered with various virtual machine sizes:
   - small: 1 vCPU, 4GB memory, 20GB storage
   - medium: 2 vCPU, 4GB memory, 20GB storage 
