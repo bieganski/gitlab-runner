@@ -22,6 +22,7 @@ require (
 	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 	github.com/getsentry/raven-go v0.0.0-20160518204710-dffeb57df75d
 	github.com/golang/mock v1.4.4
+	github.com/googleapis/gnostic v0.4.2 // indirect
 	github.com/gorhill/cronexpr v0.0.0-20160318121724-f0984319b442
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.3.1-0.20170228224354-599cba5e7b61
@@ -64,7 +65,7 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20210105210732-16f7687f5001
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	k8s.io/api v0.19.7
 	k8s.io/apimachinery v0.19.7
