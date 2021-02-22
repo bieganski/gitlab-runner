@@ -26,8 +26,14 @@ type reader interface {
 	io.Reader
 }
 
+type IOStreams struct {
+	Input io.Reader
+	Out   io.Writer
+	Err   io.Writer
+}
+
 type Docker interface {
-	Exec(ctx context.Context, containerID string, input io.Reader, output io.Writer) error
+	Exec(ctx context.Context, containerID string, streams IOStreams) error
 }
 
 func NewDocker(c docker.Client, waiter wait.KillWaiter, logger logrus.FieldLogger) Docker {
@@ -44,7 +50,7 @@ type defaultDocker struct {
 	logger logrus.FieldLogger
 }
 
-func (d *defaultDocker) Exec(ctx context.Context, containerID string, input io.Reader, output io.Writer) error {
+func (d *defaultDocker) Exec(ctx context.Context, containerID string, streams IOStreams) error {
 	d.logger.Debugln("Attaching to container", containerID, "...")
 
 	hijacked, err := d.c.ContainerAttach(ctx, containerID, attachOptions())
@@ -62,14 +68,14 @@ func (d *defaultDocker) Exec(ctx context.Context, containerID string, input io.R
 	// Copy any output to the build trace
 	stdoutErrCh := make(chan error)
 	go func() {
-		_, errCopy := stdcopy.StdCopy(output, output, hijacked.Reader)
+		_, errCopy := stdcopy.StdCopy(streams.Out, streams.Err, hijacked.Reader)
 		stdoutErrCh <- errCopy
 	}()
 
 	// Write the input to the container and close its STDIN to get it to finish
 	stdinErrCh := make(chan error)
 	go func() {
-		_, errCopy := io.Copy(hijacked.Conn, input)
+		_, errCopy := io.Copy(hijacked.Conn, streams.Input)
 		_ = hijacked.CloseWrite()
 		if errCopy != nil {
 			stdinErrCh <- errCopy

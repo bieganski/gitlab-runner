@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types"
@@ -205,7 +206,7 @@ func (s *commandExecutor) changeFilesOwnership() error {
 
 	uid, err := inspect.UID(s.Context, s.buildContainer.ID)
 	if err != nil {
-		return fmt.Errorf("checking %q image's UID: %w", imageSHA, err)
+		return fmt.Errorf("checking %q image UID: %w", imageSHA, err)
 	}
 
 	containerLog.Debugf("Container UID=%d", uid)
@@ -213,7 +214,7 @@ func (s *commandExecutor) changeFilesOwnership() error {
 
 	gid, err := inspect.UID(s.Context, s.buildContainer.ID)
 	if err != nil {
-		return fmt.Errorf("checking %q image's GID: %w", imageSHA, err)
+		return fmt.Errorf("checking %q image GID: %w", imageSHA, err)
 	}
 
 	containerLog.Debugf("Container GID=%d", gid)
@@ -253,10 +254,14 @@ func (s *commandExecutor) executeChownOnDir(
 ) error {
 	s.Println(fmt.Sprintf("Changing ownership of files at %q to %d:%d", dir, uid, gid))
 
-	input := bytes.NewBufferString(fmt.Sprintf("chown -RP -- %d:%d %q", uid, gid, dir))
 	output := new(bytes.Buffer)
+	streams := exec.IOStreams{
+		Input: strings.NewReader(fmt.Sprintf("chown -RP -- %d:%d %q", uid, gid, dir)),
+		Err:   output,
+		Out:   output,
+	}
 
-	err := dockerExec.Exec(s.Context, c.ID, input, output)
+	err := dockerExec.Exec(s.Context, c.ID, streams)
 
 	log := s.Build.Log().WithField("updatedDir", dir)
 	log.WithField("output", output.String()).Debug("Changing ownership of files")

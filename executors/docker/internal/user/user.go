@@ -3,6 +3,7 @@ package user
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ const (
 	commandIDU = "id -u"
 	commandIDG = "id -g"
 )
+
+var errIDNoOutput = errors.New("id command returned no output on stdout")
 
 type Inspect interface {
 	IsRoot(ctx context.Context, imageID string) (bool, error)
@@ -56,17 +59,28 @@ func (i *defaultInspect) GID(ctx context.Context, containerID string) (int, erro
 }
 
 func (i *defaultInspect) executeCommand(ctx context.Context, containerID string, command string) (int, error) {
-	input := bytes.NewBufferString(command)
-	output := new(bytes.Buffer)
+	stdOut := new(bytes.Buffer)
+	stdErr := new(bytes.Buffer)
+	streams := exec.IOStreams{
+		Input: strings.NewReader(command),
+		Out:   stdOut,
+		Err:   stdErr,
+	}
 
-	err := i.exec.Exec(ctx, containerID, input, output)
+	err := i.exec.Exec(ctx, containerID, streams)
 	if err != nil {
 		return 0, fmt.Errorf("executing %q on container %q: %w", command, containerID, err)
 	}
 
-	id, err := strconv.Atoi(strings.TrimSpace(output.String()))
+	out := strings.TrimSpace(stdOut.String())
+	errOut := strings.TrimSpace(stdErr.String())
+	if len(out) < 1 {
+		return 0, fmt.Errorf("%w (stderr: %s)", errIDNoOutput, errOut)
+	}
+
+	id, err := strconv.Atoi(out)
 	if err != nil {
-		return 0, fmt.Errorf("parsing %q output: %w", command, err)
+		return 0, fmt.Errorf("parsing %q output: %w (stderr: %s)", command, err, errOut)
 	}
 
 	return id, nil
