@@ -187,7 +187,7 @@ fuzz variable mask:
   needs:
   - 'tests definitions'
   - 'clone test repo'
-  parallel: 10
+  parallel: 8
   variables:
     GOROOT: "C:\\Go"
   before_script:

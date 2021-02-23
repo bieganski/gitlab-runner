@@ -38,6 +38,8 @@ tests definitions:
   extends:
   - .rules:merge_request_pipelines:no_docs
   - .go-cache
+  variables:
+    PARALLEL_TESTS_LIMIT: 8
   stage: prebuild
   script:
   - apt-get update
@@ -46,7 +48,7 @@ tests definitions:
   - make parallel_test_prepare
   artifacts:
     paths:
-    - testsdefinitions.txt
+    - testsdefinitions-*
     expire_in: 7d
 
 ecr public token:
