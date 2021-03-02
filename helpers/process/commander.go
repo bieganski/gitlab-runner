@@ -1,6 +1,7 @@
 package process
 
 import (
+	"context"
 	"io"
 	"os"
 	"os/exec"
@@ -29,11 +30,14 @@ type CommandOptions struct {
 
 type osCmd struct {
 	internal *exec.Cmd
+
+	ctx    context.Context
+	killer KillWaiter
 }
 
 // NewOSCmd creates a new implementation of Commander using the os.Cmd from
 // os/exec.
-func NewOSCmd(executable string, args []string, options CommandOptions) Commander {
+func NewOSCmd(ctx context.Context, executable string, args []string, options CommandOptions) Commander {
 	c := exec.Command(executable, args...)
 	c.Dir = options.Dir
 	c.Env = options.Env
@@ -41,7 +45,11 @@ func NewOSCmd(executable string, args []string, options CommandOptions) Commande
 	c.Stdout = options.Stdout
 	c.Stderr = options.Stderr
 
-	return &osCmd{internal: c}
+	return &osCmd{
+		internal: c,
+		ctx:      ctx,
+		killer:   NewOSKillWait(options.Logger, options.GracefulKillTimeout, options.ForceKillTimeout),
+	}
 }
 
 func (c *osCmd) Start() error {
@@ -51,7 +59,17 @@ func (c *osCmd) Start() error {
 }
 
 func (c *osCmd) Wait() error {
-	return c.internal.Wait()
+	waitCh := make(chan error)
+	go func() {
+		waitCh <- c.internal.Wait()
+	}()
+
+	select {
+	case err := <-waitCh:
+		return err
+	case <-c.ctx.Done():
+		return c.killer.KillAndWait(c, waitCh)
+	}
 }
 
 func (c *osCmd) Process() *os.Process {
