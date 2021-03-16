@@ -151,7 +151,7 @@ The total number of runner managers that you may need over time depends on the f
 
 An essential step in operating a runner fleet at scale is to set up and use the [runner monitoring](../monitoring/README.md) capabilities included with GitLab. 
 
-The following table includes a summary list of GitLab Runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](https://docs.gitlab.com/runner/monitoring/README.html#available-metrics).
+The following table includes a summary list of GitLab Runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](../monitoring/readme.md#available-metrics).
 
 | metric_name | description |
 | ------ | ------ |
@@ -176,7 +176,7 @@ The following table includes a summary list of GitLab Runner metrics. The list d
 
 ### How to prepare the Prometheus monitoring stack
 
-In this section we provide a step by step guide to configuring and using the Prometheus monitoring stack. For reference,  we provide the source code to some our [Grafana Dashboards](https://gitlab.com/gitlab-com/runbooks/tree/master/dashboards).
+In this section we provide a step by step guide to configuring and using the Prometheus monitoring stack. For reference, we provide the source code to some our [Grafana Dashboards](https://gitlab.com/gitlab-com/runbooks/tree/master/dashboards).
 
 {What we are missing is a step by step tutorial on how to monitor GitLab CI on the RAILS side and the GitLab Runner side.}
 
