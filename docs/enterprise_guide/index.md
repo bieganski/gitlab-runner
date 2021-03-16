@@ -151,11 +151,11 @@ The total number of runner managers that you may need over time depends on the f
 
 An essential step in operating a runner fleet at scale is to set up and use the [runner monitoring](../monitoring/README.md) capabilities included with GitLab. 
 
-The following table includes a summary list of GitLab runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](https://docs.gitlab.com/runner/monitoring/README.html#available-metrics).
+The following table includes a summary list of GitLab Runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](https://docs.gitlab.com/runner/monitoring/README.html#available-metrics).
 
 | metric_name | description |
 | ------ | ------ |
-| gitlab_runner_api_request_statuses_total |The total number of api requests, partitioned by runner, endpoint and status. |
+| gitlab_runner_api_request_statuses_total |The total number of API requests, partitioned by runner, endpoint and status. |
 | gitlab_runner_autoscaling_machine_creation_duration_seconds  | Histogram of machine creation time.|
 | gitlab_runner_autoscaling_machine_states  | The current number of machines per state in this provider. |
 | gitlab_runner_concurrent | The current value of concurrent setting. |
