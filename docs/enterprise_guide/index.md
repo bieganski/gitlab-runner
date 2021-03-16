@@ -151,7 +151,7 @@ The total number of runner managers that you may need over time depends on the f
 
 An essential step in operating a runner fleet at scale is to set up and use the [runner monitoring](../monitoring/README.md) capabilities included with GitLab. 
 
-The following table includes a summary list of GitLab Runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](../monitoring/readme.md#available-metrics).
+The following table includes a summary list of GitLab Runner metrics. The list does not include the GoLang specific process metrics. To view those metrics on a runner, execute the command as noted [here](../monitoring/README.md#available-metrics).
 
 | metric_name | description |
 | ------ | ------ |
