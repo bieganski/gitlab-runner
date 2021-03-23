@@ -21,6 +21,7 @@ const (
 	EnableBashExitCodeCheck                     string = "FF_ENABLE_BASH_EXIT_CODE_CHECK"
 	UseWindowsLegacyProcessStrategy             string = "FF_USE_WINDOWS_LEGACY_PROCESS_STRATEGY"
 	SkipDockerMachineProvisionOnCreationFailure string = "FF_SKIP_DOCKER_MACHINE_PROVISION_ON_CREATION_FAILURE"
+	UsePowershellPathResolver                   string = "FF_USE_POWERSHELL_PATH_RESOLVER"
 )
 
 type FeatureFlag struct {
@@ -159,6 +160,14 @@ var flags = []FeatureFlag{
 			"not created, `docker-machine provision` runs for X amount of times. When " +
 			"this feature flag is set to `true`, it skips `docker-machine provision` " +
 			"removes the machine, and creates another machine instead.",
+	},
+	{
+		Name:            UsePowershellPathResolver,
+		DefaultValue:    false,
+		Deprecated:      false,
+		ToBeRemovedWith: "",
+		Description: "When enabled, Powershell resolves pathnames rather than Runner using OS-specific filepath " +
+			"functions that are specific to where Runner is hosted.",
 	},
 }
 
