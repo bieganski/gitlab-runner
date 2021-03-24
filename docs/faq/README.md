@@ -38,6 +38,29 @@ Is it possible to run GitLab Runner in debug/verbose mode. From a terminal, run:
 gitlab-runner --debug run
 ```
 
+### Configure Docker Runner DNS for special network setups
+
+When configuring a GitLab Runner with the Docker executor, it is possible to run into a problem where the Runner daemon on the host can access GitLab but the built container cannot. This can happen when DNS is configured in the host but those configurations are not passed to the container. 
+
+**Example:**
+
+GitLab service and GitLab Runner exist in two different networks which are bridged in two ways (e.g. over the Internet and through a VPN). If the routing mechanism which the Runner is using to find the GitLab service is to query DNS, the container's DNS configuration will not know to go use the DNS service over the VPN and may default to one provided over the Internet. This would result in the following message:
+
+```
+Created fresh repository.
+++ echo 'Created fresh repository.'
+++ git -c 'http.userAgent=gitlab-runner 13.9.0 linux/amd64' fetch origin +da39a3ee5e6b4b0d3255bfef95601890afd80709:refs/pipelines/435345 +refs/heads/master:refs/remotes/origin/master --depth 50 --prune --quiet
+fatal: Authentication failed for 'https://gitlab.example.com/group/example-project.git/'
+```
+
+In the above case, the authenication failure is caused by a service in between the Internet and the GitLab service which uses separate credentials which the runner could circumvent if they used the DNS service over the VPN.
+
+One can tell Docker which DNS server to use by using the `dns` configuration in the `[runners.docker]` section of [the Runner's config.toml](https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnersdocker-section).
+
+```
+dns           = ["192.168.xxx.xxx","192.168.xxx.xxx"]
+```
+
 ### Enable debug mode logging in `config.toml`
 
 Debug logging can be enabled in the [global section of the `config.toml`](../configuration/advanced-configuration.md#the-global-section) by setting the `log_level` setting to `debug`.
