@@ -46,7 +46,7 @@ When configuring a GitLab Runner with the Docker executor, it is possible to run
 
 GitLab service and GitLab Runner exist in two different networks which are bridged in two ways (e.g. over the Internet and through a VPN). If the routing mechanism which the Runner is using to find the GitLab service is to query DNS, the container's DNS configuration will not know to go use the DNS service over the VPN and may default to one provided over the Internet. This would result in the following message:
 
-```
+```bash
 Created fresh repository.
 ++ echo 'Created fresh repository.'
 ++ git -c 'http.userAgent=gitlab-runner 13.9.0 linux/amd64' fetch origin +da39a3ee5e6b4b0d3255bfef95601890afd80709:refs/pipelines/435345 +refs/heads/master:refs/remotes/origin/master --depth 50 --prune --quiet
@@ -57,7 +57,7 @@ In the above case, the authenication failure is caused by a service in between t
 
 One can tell Docker which DNS server to use by using the `dns` configuration in the `[runners.docker]` section of [the Runner's config.toml](../configuration/advanced-configuration.md#the-runnersdocker-section).
 
-```
+```bash
 dns           = ["192.168.xxx.xxx","192.168.xxx.xxx"]
 ```
 
