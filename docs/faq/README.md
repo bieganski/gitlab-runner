@@ -55,7 +55,7 @@ fatal: Authentication failed for 'https://gitlab.example.com/group/example-proje
 
 In the above case, the authenication failure is caused by a service in between the Internet and the GitLab service which uses separate credentials which the runner could circumvent if they used the DNS service over the VPN.
 
-One can tell Docker which DNS server to use by using the `dns` configuration in the `[runners.docker]` section of [the Runner's config.toml](../configuration/advanced-configuration.md#the-runnersdocker-section).
+One can tell Docker which DNS server to use by using the `dns` configuration in the `[runners.docker]` section of [the Runner's `config.toml`](../configuration/advanced-configuration.md#the-runnersdocker-section).
 
 ```toml
 dns           = ["192.168.xxx.xxx","192.168.xxx.xxx"]
