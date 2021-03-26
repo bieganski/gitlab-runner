@@ -57,7 +57,7 @@ In the above case, the authenication failure is caused by a service in between t
 
 One can tell Docker which DNS server to use by using the `dns` configuration in the `[runners.docker]` section of [the Runner's config.toml](../configuration/advanced-configuration.md#the-runnersdocker-section).
 
-```bash
+```text
 dns           = ["192.168.xxx.xxx","192.168.xxx.xxx"]
 ```
 
