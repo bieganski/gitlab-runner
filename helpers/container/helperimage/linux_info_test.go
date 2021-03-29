@@ -24,6 +24,7 @@ func Test_linuxInfo_create(t *testing.T) {
 			dockerArch     string
 			revision       string
 			gitlabRegistry bool
+			flavor         string
 			expectedInfo   Info
 		}{
 			"When dockerArch not specified we fallback to runtime arch": {
@@ -110,6 +111,19 @@ func Test_linuxInfo_create(t *testing.T) {
 					Cmd:                     expectedCmd,
 				},
 			},
+			"Flavor configured": {
+				dockerArch:     "amd64",
+				revision:       "2923a43",
+				gitlabRegistry: true,
+				flavor:         "ubuntu",
+				expectedInfo: Info{
+					Architecture:            "x86_64",
+					Name:                    GitLabRegistryName,
+					Tag:                     "ubuntu-x86_64-2923a43" + expectedTagSuffix,
+					IsSupportingLocalImport: true,
+					Cmd:                     expectedCmd,
+				},
+			},
 		}
 
 		t.Run(shell, func(t *testing.T) {
@@ -123,6 +137,7 @@ func Test_linuxInfo_create(t *testing.T) {
 							Architecture:   test.dockerArch,
 							Shell:          shell,
 							GitLabRegistry: test.gitlabRegistry,
+							Flavor:         test.flavor,
 						},
 					)
 

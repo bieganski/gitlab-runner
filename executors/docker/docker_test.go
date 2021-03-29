@@ -1852,6 +1852,7 @@ func TestLocalHelperImage(t *testing.T) {
 	tests := map[string]struct {
 		jobVariables     common.JobVariables
 		helperImageInfo  helperimage.Info
+		imageFlavor      string
 		shell            string
 		clientAssertions func(*docker.MockClient)
 		expectedImage    *types.ImageInspect
@@ -2024,7 +2025,45 @@ func TestLocalHelperImage(t *testing.T) {
 						return assert.IsType(t, new(os.File), source.Source) &&
 							assert.Equal(
 								t,
-								"prebuilt-x86_64-pwsh.tar.xz",
+								"prebuilt-alpine-x86_64-pwsh.tar.xz",
+								path.Base((source.Source.(*os.File)).Name()),
+							)
+					}),
+					helperimage.DockerHubName,
+					mock.Anything,
+				).Return(nil)
+
+				imageInspect := types.ImageInspect{
+					RepoTags: []string{
+						dockerHubHelperImage,
+					},
+				}
+
+				c.On(
+					"ImageInspectWithRaw",
+					mock.Anything,
+					dockerHubHelperImage,
+				).Return(imageInspect, []byte{}, nil)
+			},
+			expectedImage: &types.ImageInspect{
+				RepoTags: []string{
+					dockerHubHelperImage,
+				},
+			},
+		},
+		"Powershell image is used when shell is pwsh and flavor ubuntu": {
+			helperImageInfo: defaultHelperImageInfo,
+			imageFlavor:     "ubuntu",
+			shell:           shells.SNPwsh,
+			clientAssertions: func(c *docker.MockClient) {
+				c.On(
+					"ImageImportBlocking",
+					mock.Anything,
+					mock.MatchedBy(func(source types.ImageImportSource) bool {
+						return assert.IsType(t, new(os.File), source.Source) &&
+							assert.Equal(
+								t,
+								"prebuilt-ubuntu-x86_64-pwsh.tar.xz",
 								path.Base((source.Source.(*os.File)).Name()),
 							)
 					}),
@@ -2069,6 +2108,9 @@ func TestLocalHelperImage(t *testing.T) {
 					Config: common.RunnerConfig{
 						RunnerSettings: common.RunnerSettings{
 							Shell: tt.shell,
+							Docker: &common.DockerConfig{
+								HelperImageFlavor: tt.imageFlavor,
+							},
 						},
 					},
 				},
@@ -2093,8 +2135,10 @@ func createFakePrebuiltImages(t *testing.T, architecture string) func() {
 	prevPrebuiltImagesPaths := PrebuiltImagesPaths
 	PrebuiltImagesPaths = []string{tempImgDir}
 	for _, fakeImgName := range []string{
-		fmt.Sprintf("prebuilt-%s.tar.xz", architecture),
-		fmt.Sprintf("prebuilt-%s-pwsh.tar.xz", architecture),
+		fmt.Sprintf("prebuilt-alpine-%s.tar.xz", architecture),
+		fmt.Sprintf("prebuilt-alpine-%s-pwsh.tar.xz", architecture),
+		fmt.Sprintf("prebuilt-ubuntu-%s.tar.xz", architecture),
+		fmt.Sprintf("prebuilt-ubuntu-%s-pwsh.tar.xz", architecture),
 	} {
 		fakeLocalImage, err := os.Create(path.Join(tempImgDir, fakeImgName))
 		require.NoError(t, err)
