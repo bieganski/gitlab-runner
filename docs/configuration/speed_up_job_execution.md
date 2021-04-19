@@ -79,6 +79,8 @@ to use the new registry server.
 NOTE:
 The following uses an external tool that's not managed by GitLab.
 
+WARNING:
+This uses credentials that has permissions to pull from all repositories.
 See [rpardini/docker-registry-proxy](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
 
 ```
