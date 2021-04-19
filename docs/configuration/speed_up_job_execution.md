@@ -74,6 +74,23 @@ The Docker Hub registry is accessible under `MY_REGISTRY_IP:6000`.
 You can now [configure `config.toml`](../configuration/autoscale.md#distributed-container-registry-mirroring)
 to use the new registry server.
 
+#### Use a GitLab Container Registry mirror
+
+NOTE:
+The following uses an external tool that's not managed by GitLab.
+
+See [rpardini/docker-registry-proxy](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
+
+```
+docker run  --rm --name docker_registry_proxy -it \
+       -p 0.0.0.0:3128:3128 -e ENABLE_MANIFEST_CACHE=true \
+       -v $(pwd)/docker_mirror_cache:/docker_mirror_cache \
+       -v $(pwd)/docker_mirror_certs:/ca \
+       -e REGISTRIES="reg.example.com git.example.com" \
+       -e AUTH_REGISTRIES="git.example.com:USER:PASSWORD" \
+       rpardini/docker-registry-proxy:0.6.2
+```
+
 ## Use a distributed cache
 
 You can speed up the time it takes to download language dependencies by
