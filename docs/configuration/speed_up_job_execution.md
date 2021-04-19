@@ -76,13 +76,13 @@ to use the new registry server.
 
 #### Use a GitLab Container Registry mirror
 
-NOTE:
-The following uses an external tool that's not managed by GitLab.
+You can use an external tool to create a Container Registry mirror.
 
-WARNING:
-This uses credentials that has permissions to pull from all repositories.
+Prerequisite:
 
-See [rpardini/docker-registry-proxy](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
+- You must have credentials that allow you to pull from all repositories.
+
+See [`rpardini/docker-registry-proxy`](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
 
 ```shell
 docker run  --rm --name docker_registry_proxy -it \
