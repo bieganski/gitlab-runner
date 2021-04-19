@@ -83,7 +83,7 @@ WARNING:
 This uses credentials that has permissions to pull from all repositories.
 See [rpardini/docker-registry-proxy](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
 
-```
+```shell
 docker run  --rm --name docker_registry_proxy -it \
        -p 0.0.0.0:3128:3128 -e ENABLE_MANIFEST_CACHE=true \
        -v $(pwd)/docker_mirror_cache:/docker_mirror_cache \
