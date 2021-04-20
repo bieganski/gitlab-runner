@@ -207,7 +207,7 @@ fuzz variable mask:
     when: always
     expire_in: 7d
   allow_failure:
-    exit_codes: 1
+    exit_codes: 99
 
 windows 1809 tests:
   extends:
