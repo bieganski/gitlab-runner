@@ -53,7 +53,7 @@ func newStatePermutationFromBuild(build *common.Build) statePermutation {
 	// https://gitlab.com/gitlab-org/gitlab-runner/-/issues/26900
 	switch state {
 	case common.BuildRunRuntimeFailed, common.BuildRunRuntimeCanceled:
-		state = common.BuildRuntimeState("finished")
+		state = "finished"
 	}
 
 	return statePermutation{
