@@ -82,7 +82,7 @@ Prerequisite:
 
 - You must have credentials that allow you to pull from all repositories.
 
-See [`rpardini/docker-registry-proxy`](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details:
+To create the Container Registry mirror:
 
 ```shell
 docker run  --rm --name docker_registry_proxy -it \
@@ -93,6 +93,8 @@ docker run  --rm --name docker_registry_proxy -it \
        -e AUTH_REGISTRIES="git.example.com:USER:PASSWORD" \
        rpardini/docker-registry-proxy:0.6.2
 ```
+
+See [`rpardini/docker-registry-proxy`](https://github.com/rpardini/docker-registry-proxy#gitlab-auth) for more details.
 
 ## Use a distributed cache
 
