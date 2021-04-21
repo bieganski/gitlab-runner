@@ -199,8 +199,6 @@ fuzz variable mask:
   - cd $PKG_BUILD_DIR
   script:
   - .\ci\test_windows.ps1
-  after_script:
-  - if (Test-Path $PKG_BUILD_DIR) { $(Get-Item $PKG_BUILD_DIR).Delete() }
   artifacts:
     paths:
     - .testoutput/*
