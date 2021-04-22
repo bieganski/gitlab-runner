@@ -152,7 +152,7 @@ development servercore1909 helper docker image:
   - .windows1909
   - .release_windows_docker_images
   variables:
-    PUBLISH_IMAGES: "false"
+    #PUBLISH_IMAGES: "false"
     PUSH_TO_DOCKER_HUB: "false"
     PUSH_TO_ECR_PUBLIC: "false"
 
