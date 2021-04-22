@@ -80,6 +80,7 @@ You can use an external tool to create a Container Registry mirror.
 
 Prerequisite:
 
+- Make sure that Docker Engine is installed on the machine.
 - You must have credentials that allow you to pull from all repositories.
 
 To create the Container Registry mirror:
