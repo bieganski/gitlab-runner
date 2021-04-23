@@ -103,3 +103,27 @@ func getJobResponseWithCommands(t *testing.T, baseJobGetter baseJobGetter, comma
 
 	return jobResponse
 }
+
+// WithFeatureFlags runs a subtest for the on/off value for each flag provided,
+// and allows a build object as part of the test to be decorated with the
+// feature flag variable.
+func WithEachFeatureFlag(t *testing.T, f func(t *testing.T, update func(*common.Build)), flags ...string) {
+	if len(flags) == 0 {
+		// if no flags are provided, still run the inner test
+		f(t, func(build *common.Build) {})
+		return
+	}
+
+	for _, flag := range flags {
+		for _, value := range []string{"false", "true"} {
+			t.Run(fmt.Sprintf("%v=%v", flag, value), func(t *testing.T) {
+				f(t, func(build *common.Build) {
+					build.Variables = append(build.Variables, common.JobVariable{
+						Key:   flag,
+						Value: value,
+					})
+				})
+			})
+		}
+	}
+}
