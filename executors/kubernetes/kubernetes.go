@@ -40,6 +40,8 @@ const (
 	detectShellScriptName = "detect_shell_script"
 
 	waitLogFileTimeout = time.Minute
+
+	outputLogFileNotExistsExitCode = 100
 )
 
 var (
@@ -374,13 +376,13 @@ func (s *executor) processLogs(ctx context.Context) {
 			if err != nil {
 				s.Warningln(fmt.Sprintf("Error writing log line to trace: %v", err))
 			}
-		case err, ok := <-errCh:
-			if !ok {
-				continue
+		case err := <-errCh:
+			exitCode := getExitCode(err)
+			if exitCode != nil {
+				s.Warningln(fmt.Sprintf("%v", err))
+				// Script can be kept to nil as not being used after the exitStatus is received L1223
+				s.remoteProcessTerminated <- shells.TrapCommandExitStatus{CommandExitCode: exitCode}
 			}
-			s.Warningln(fmt.Sprintf("Error returned from log processor: %v", err))
-
-			s.remoteProcessTerminated <- shells.TrapCommandExitStatus{CommandExitCode: getExitCode(err)}
 		}
 	}
 }

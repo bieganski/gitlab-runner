@@ -473,6 +473,8 @@ func testKubernetesReplaceMissingEnvVarFeatureFlag(t *testing.T, featureFlagName
 func TestLogDeletionFeatureFlag(t *testing.T) {
 	helpers.SkipIntegrationTests(t, "kubectl", "cluster-info")
 
+	t.Skip("Log deletion test temporary skipped: issue https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27755")
+
 	tests := []struct {
 		stage            string
 		outputAssertions func(t *testing.T, out string, pod string)
@@ -483,7 +485,7 @@ func TestLogDeletionFeatureFlag(t *testing.T) {
 				assert.Contains(
 					t,
 					out,
-					"ERROR: Job failed: command terminated with exit code 1",
+					"ERROR: Job failed: command terminated with exit code 100",
 				)
 			},
 		},
@@ -493,7 +495,7 @@ func TestLogDeletionFeatureFlag(t *testing.T) {
 				assert.Contains(
 					t,
 					out,
-					"ERROR: Job failed: command terminated with exit code 1",
+					"ERROR: Job failed: command terminated with exit code 100",
 				)
 			},
 		},
