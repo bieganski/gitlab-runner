@@ -118,6 +118,9 @@ type executor struct {
 	newLogProcessor func() logProcessor
 
 	remoteProcessTerminated chan shells.TrapCommandExitStatus
+
+	// Flag if a repo mount and emptyDir volume are needed
+	isEmptyDirVolumeNeeded *bool
 }
 
 type serviceDeleteResponse struct {
@@ -633,6 +636,8 @@ func (s *executor) scriptPath(stage common.BuildStage) string {
 func (s *executor) getVolumeMounts() []api.VolumeMount {
 	var mounts []api.VolumeMount
 
+	s.repoMountChecker()
+
 	// The configMap is nil when using legacy execution
 	if s.configMap != nil {
 		// These volume mounts **MUST NOT** be mounted inside another volume mount.
@@ -658,16 +663,7 @@ func (s *executor) getVolumeMounts() []api.VolumeMount {
 
 	mounts = append(mounts, s.getVolumeMountsForConfig()...)
 
-	// only mount repo mount if builds_dir doesn't already have a volume at that path
-	mountEmptyDir := true
-	for _, mount := range mounts {
-		if mount.MountPath == s.Build.RootDir {
-			mountEmptyDir = false
-			break
-		}
-	}
-
-	if mountEmptyDir {
+	if *s.isEmptyDirVolumeNeeded {
 		mounts = append(mounts, api.VolumeMount{
 			Name:      "repo",
 			MountPath: s.Build.RootDir,
@@ -737,9 +733,11 @@ func (s *executor) getVolumeMountsForConfig() []api.VolumeMount {
 }
 
 func (s *executor) getVolumes() []api.Volume {
+	s.repoMountChecker()
+
 	volumes := s.getVolumesForConfig()
 
-	if s.isEmptyDirVolumeNeeded() {
+	if *s.isEmptyDirVolumeNeeded {
 		volumes = append(volumes, api.Volume{
 			Name: "repo",
 			VolumeSource: api.VolumeSource{
@@ -916,16 +914,58 @@ func (s *executor) getVolumesForCSIs() []api.Volume {
 	return volumes
 }
 
-func (s *executor) isEmptyDirVolumeNeeded() bool {
-	mounts := s.getVolumeMountsForConfig()
+//nolint:gocognit
+func (s *executor) repoMountChecker() {
+	if s.isEmptyDirVolumeNeeded != nil {
+		return
+	}
 
-	for _, mount := range mounts {
+	isNeeded := false
+
+	for _, mount := range s.Config.Kubernetes.Volumes.HostPaths {
 		if mount.MountPath == s.Build.RootDir {
-			return false
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
 		}
 	}
 
-	return true
+	for _, mount := range s.Config.Kubernetes.Volumes.Secrets {
+		if mount.MountPath == s.Build.RootDir {
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
+		}
+	}
+
+	for _, mount := range s.Config.Kubernetes.Volumes.PVCs {
+		if mount.MountPath == s.Build.RootDir {
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
+		}
+	}
+
+	for _, mount := range s.Config.Kubernetes.Volumes.ConfigMaps {
+		if mount.MountPath == s.Build.RootDir {
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
+		}
+	}
+
+	for _, mount := range s.Config.Kubernetes.Volumes.EmptyDirs {
+		if mount.MountPath == s.Build.RootDir {
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
+		}
+	}
+
+	for _, mount := range s.Config.Kubernetes.Volumes.CSIs {
+		if mount.MountPath == s.Build.RootDir {
+			s.isEmptyDirVolumeNeeded = &isNeeded
+			return
+		}
+	}
+
+	isNeeded = true
+	s.isEmptyDirVolumeNeeded = &isNeeded
 }
 
 func (s *executor) setupCredentials() error {
