@@ -32,10 +32,10 @@ func OnEachShellWithWriter(t *testing.T, f func(t *testing.T, shell string, writ
 			return &shells.CmdWriter{}
 		},
 		"powershell": func() shells.ShellWriter {
-			return &shells.PsWriter{Shell: "powershell", EOL: "\r\n"}
+			return &shells.PsWriter{Shell: "powershell", EOL: "\r\n", PassAsFile: true}
 		},
 		"pwsh": func() shells.ShellWriter {
-			return &shells.PsWriter{Shell: "pwsh", EOL: "\n"}
+			return &shells.PsWriter{Shell: "pwsh", EOL: "\n", PassAsFile: true}
 		},
 	}
 

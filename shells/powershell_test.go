@@ -1,6 +1,7 @@
 package shells
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,41 +14,67 @@ func TestPowershell_LineBreaks(t *testing.T) {
 	testCases := map[string]struct {
 		shell                   string
 		eol                     string
-		expectedEdition         string
 		expectedErrorPreference string
 	}{
 		"Windows newline on Desktop": {
 			shell:                   SNPowershell,
 			eol:                     "\r\n",
-			expectedEdition:         "Desktop",
 			expectedErrorPreference: "",
 		},
 		"Windows newline on Core": {
 			shell:                   SNPwsh,
 			eol:                     "\r\n",
-			expectedEdition:         "Core",
 			expectedErrorPreference: `$ErrorActionPreference = "Stop"` + "\r\n\r\n",
 		},
 		"Linux newline on Core": {
 			shell:                   SNPwsh,
 			eol:                     "\n",
-			expectedEdition:         "Core",
 			expectedErrorPreference: `$ErrorActionPreference = "Stop"` + "\n\n",
 		},
 	}
+
 	for tn, tc := range testCases {
 		t.Run(tn, func(t *testing.T) {
 			eol := tc.eol
-			writer := &PsWriter{Shell: tc.shell, EOL: eol}
+			writer := &PsWriter{Shell: tc.shell, EOL: eol, PassAsFile: true}
 			writer.Command("foo", "")
 
 			expectedOutput :=
 				tc.expectedErrorPreference +
 					`& "foo" ""` + eol + "if(!$?) { Exit &{if($LASTEXITCODE) {$LASTEXITCODE} else {1}} }" + eol +
-					eol +
 					eol
 			if tc.shell != SNPwsh {
 				expectedOutput = "\xef\xbb\xbf" + expectedOutput
+			}
+			assert.Equal(t, expectedOutput, writer.Finish(false))
+		})
+	}
+}
+
+func TestPowershell_StdinWrapperCodeBlock(t *testing.T) {
+	testCases := map[string]struct {
+		passAsFile            bool
+		expectedScriptWrapper string
+	}{
+		"is not present when passed as file": {
+			passAsFile: true,
+		},
+		"is present when passed through stdin": {
+			passAsFile:            false,
+			expectedScriptWrapper: "$__pwshcode = {%s}\n\n& $__pwshcode\n",
+		},
+	}
+
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			writer := &PsWriter{Shell: SNPwsh, EOL: "\n", PassAsFile: tc.passAsFile}
+			writer.Command("foo", "")
+
+			expectedOutput :=
+				`$ErrorActionPreference = "Stop"` + "\n\n" +
+					`& "foo" ""` + "\nif(!$?) { Exit &{if($LASTEXITCODE) {$LASTEXITCODE} else {1}} }\n\n"
+			if tc.expectedScriptWrapper != "" {
+				expectedOutput = fmt.Sprintf(tc.expectedScriptWrapper, expectedOutput)
 			}
 			assert.Equal(t, expectedOutput, writer.Finish(false))
 		})

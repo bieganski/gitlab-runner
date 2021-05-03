@@ -1,10 +1,8 @@
 package shells
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,6 +13,7 @@ import (
 )
 
 const (
+	dockerExecutor        = "docker"
 	dockerWindowsExecutor = "docker-windows"
 
 	SNPwsh       = "pwsh"
@@ -33,6 +32,7 @@ type PsWriter struct {
 	indent        int
 	Shell         string
 	EOL           string
+	PassAsFile    bool
 }
 
 func stdinCmdArgs() []string {
@@ -299,31 +299,40 @@ func (p *PsWriter) Join(elem ...string) string {
 }
 
 func (p *PsWriter) Finish(trace bool) string {
-	var buffer bytes.Buffer
-	w := bufio.NewWriter(&buffer)
+	var sb strings.Builder
 
 	if p.Shell != SNPwsh {
 		// write UTF-8 BOM (Powershell Core doesn't use a BOM as mentioned in
 		// https://gitlab.com/gitlab-org/gitlab-runner/-/issues/3896#note_157830131)
-		_, _ = io.WriteString(w, "\xef\xbb\xbf")
+		sb.WriteString("\xef\xbb\xbf")
 	}
-
-	p.writeTrace(w, trace)
-	if p.Shell == SNPwsh {
-		_, _ = io.WriteString(w, `$ErrorActionPreference = "Stop"`+p.EOL+p.EOL)
+	if !p.PassAsFile {
+		// If passing script through STDIN, then wrap script in a block so that it is not executed line-by-line
+		// See https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27830
+		sb.WriteString("$__pwshcode = {")
 	}
-
-	// add empty line to close code-block when it is piped to STDIN
-	p.Line("")
-	_, _ = io.WriteString(w, p.String())
-	_ = w.Flush()
-	return buffer.String()
-}
-
-func (p *PsWriter) writeTrace(w io.Writer, trace bool) {
 	if trace {
-		_, _ = io.WriteString(w, "Set-PSDebug -Trace 2"+p.EOL)
+		sb.WriteString("Set-PSDebug -Trace 2")
+		sb.WriteString(p.EOL)
 	}
+	if p.Shell == SNPwsh {
+		sb.WriteString(`$ErrorActionPreference = "Stop"`)
+		sb.WriteString(p.EOL)
+		sb.WriteString(p.EOL)
+	}
+
+	// write main script body
+	sb.Write(p.Bytes())
+
+	if !p.PassAsFile {
+		sb.WriteString("}")
+		sb.WriteString(p.EOL)
+		sb.WriteString(p.EOL)
+		sb.WriteString("& $__pwshcode")
+		sb.WriteString(p.EOL)
+	}
+
+	return sb.String()
 }
 
 func (b *PowerShell) GetName() string {
@@ -334,7 +343,7 @@ func (b *PowerShell) GetConfiguration(info common.ShellScriptInfo) (*common.Shel
 	script := &common.ShellConfiguration{
 		Command:       b.Shell,
 		Arguments:     stdinCmdArgs(),
-		PassFile:      b.Shell != SNPwsh && info.Build.Runner.Executor != dockerWindowsExecutor,
+		PassFile:      !b.isStdinSupported(info),
 		Extension:     "ps1",
 		DockerCommand: PowershellDockerCmd(b.Shell),
 	}
@@ -346,10 +355,19 @@ func (b *PowerShell) GetConfiguration(info common.ShellScriptInfo) (*common.Shel
 	return script, nil
 }
 
+func (b *PowerShell) isStdinSupported(info common.ShellScriptInfo) bool {
+	executor := info.Build.Runner.Executor
+
+	return b.Shell == SNPwsh ||
+		executor == dockerExecutor ||
+		executor == dockerWindowsExecutor
+}
+
 func (b *PowerShell) GenerateScript(buildStage common.BuildStage, info common.ShellScriptInfo) (string, error) {
 	w := &PsWriter{
 		Shell:         b.Shell,
 		EOL:           b.EOL,
+		PassAsFile:    !b.isStdinSupported(info),
 		TemporaryPath: info.Build.TmpProjectDir(),
 	}
 
