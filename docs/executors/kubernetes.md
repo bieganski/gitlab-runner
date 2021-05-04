@@ -466,12 +466,12 @@ to volume's mount path) where _secret's_ value should be saved. When using `item
 
 ## Custom builds directory mount
 
-To store the builds directory for the job define a custom volume mounts to the
-configured `builds_dir` (`/builds` by default). Learn more on how to define
-volumes in [using volumes](#using-volumes). If you want to
-use [PVC volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
-be aware that you might be limited to running jobs on 1 node depending on
-the [access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes).
+To store the builds directory for the job, define custom volume mounts to the
+configured `builds_dir` (`/builds` by default).
+To use [PVC volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/),
+be aware that depending on the
+[access mode](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes),
+you might be limited to running jobs on 1 node.
 
 Here is an example configuration:
 
