@@ -56,10 +56,52 @@ func Filter(vs []string, f func(string) bool) []string {
 	return vsf
 }
 
-func (m *DataBag) GetAllJobs() (result []string, ok bool) { // (result []string, ok bool) {
+func (m *DataBag) GetAllJobsSorted() (result []string, ok bool) {
+
+	var jobs, stages, x = m.getAllJobsAndStages()
+	ok = x
+
+	// stages -> jobs
+	var stages_jobs = make(map[string][]string)
+
+	for k := range stages {
+		stages_jobs[stages[k]] = []string{}
+	}
+
+	for k := range jobs {
+		var job string
+		var stage string
+		job = jobs[k]
+		var a map[string]interface{}
+		a = (*m)[job].(map[string]interface{})
+
+		if a["stage"] == nil {
+			stage = "test"
+		} else {
+			stage = a["stage"].(string)
+		}
+
+		stages_jobs[stage] = append(stages_jobs[stage], job)
+	}
+
+	for k := range stages {
+		result = append(result, stages_jobs[stages[k]]...)
+	}
+	return
+}
+
+func (m *DataBag) getAllJobsAndStages() ([]string, []string, bool) {
+	var ok bool
+	var result []string
 	var keys = []string{}
 	for k := range *m {
 		keys = append(keys, k)
+	}
+	var stages_ordered []interface{}
+	stages_ordered, ok = (*m)["stages"].([]interface{})
+	if !ok {
+		fmt.Println(stages_ordered)
+		panic(fmt.Errorf("could not find 'stages' key in .gitlab-ci.yml file!"))
 	}
 	for i := range keys {
 		value, ok := helpers.GetMapKey(*m, keys[i])
@@ -73,7 +115,12 @@ func (m *DataBag) GetAllJobs() (result []string, ok bool) { // (result []string,
 	var out = []string{"variables", "workflow"}
 	result = Filter(result, func(el string) bool { return !contains(out, el) })
 
-	return
+	var arr []string = make([]string, len(stages_ordered))
+	for i := range stages_ordered {
+		arr[i] = stages_ordered[i].(string)
+	}
+
+	return result, arr, ok
 }
 
 func (m *DataBag) GetSubOptions(keys ...string) (result DataBag, ok bool) {

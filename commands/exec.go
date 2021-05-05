@@ -112,7 +112,9 @@ func (c *ExecCommand) Execute(context *cli.Context) {
 		parser := gitlab_ci_yaml_parser.NewGitLabCiYamlParser(c.Job)
 		var m, _ = parser.ParseFile()
 
-		var jobs, ok = m.GetAllJobs()
+		// sorted by stage.
+		var jobs, ok = m.GetAllJobsSorted()
+		// panic(fmt.Sprintf("%v", jobs))
 		if ok {
 			for i := range jobs {
 				c.ExecuteOrig(context, jobs[i])
