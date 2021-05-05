@@ -90,7 +90,6 @@ func GenerateShellScript(buildStage BuildStage, info ShellScriptInfo) (string, e
 	if shell == nil {
 		return "", fmt.Errorf("shell %s not found", info.Shell)
 	}
-
 	return shell.GenerateScript(buildStage, info)
 }
 

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitlab-runner/common"
 
 	"gopkg.in/yaml.v2"
@@ -19,6 +20,11 @@ type GitLabCiYamlParser struct {
 	jobConfig DataBag
 }
 
+func (c *GitLabCiYamlParser) ParseFile() (DataBag, error) {
+	var err = c.parseFile()
+	return c.config, err
+}
+
 func (c *GitLabCiYamlParser) parseFile() (err error) {
 	data, err := ioutil.ReadFile(c.filename)
 	if err != nil {
@@ -27,6 +33,7 @@ func (c *GitLabCiYamlParser) parseFile() (err error) {
 
 	config := make(DataBag)
 	err = yaml.Unmarshal(data, config)
+	// panic(fmt.Sprintf("config: %+v", config))
 	if err != nil {
 		return err
 	}
@@ -73,6 +80,11 @@ func (c *GitLabCiYamlParser) getCommands(commands interface{}) (common.StepScrip
 		for _, line := range t {
 			if lineText, ok := line.(string); ok {
 				steps = append(steps, lineText)
+			} else if lineText, ok := line.([]interface{}); ok {
+				for i := range lineText {
+					var cmd = lineText[i].(string)
+					steps = append(steps, cmd)
+				}
 			} else {
 				return common.StepScript{}, errors.New("unsupported script")
 			}
@@ -91,7 +103,7 @@ func (c *GitLabCiYamlParser) getCommands(commands interface{}) (common.StepScrip
 
 func (c *GitLabCiYamlParser) prepareSteps(job *common.JobResponse) error {
 	if c.jobConfig["script"] == nil {
-		return fmt.Errorf("missing 'script' for job")
+		return fmt.Errorf("missing 'script' for job %+v", c.jobConfig)
 	}
 
 	var scriptCommands, afterScriptCommands common.StepScript
@@ -368,6 +380,8 @@ func (c *GitLabCiYamlParser) ParseYaml(job *common.JobResponse) (err error) {
 		{c.prepareArtifacts},
 		{c.prepareCache},
 	}
+
+	log.SetLevel(log.DebugLevel)
 
 	for _, parser := range parsers {
 		err = parser.method(job)

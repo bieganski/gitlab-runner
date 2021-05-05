@@ -306,7 +306,14 @@ func (b *Build) StartBuild(rootDir, cacheDir string, customBuildDirEnabled, shar
 	b.refreshAllVariables()
 
 	var err error
+
+	
 	b.BuildDir, err = b.getCustomBuildDir(b.RootDir, "GIT_CLONE_PATH", customBuildDirEnabled, sharedDir)
+	
+	// in-place run, without cloning fresh repository.
+	// TODO it should be chosen only if run all jobs.
+	b.BuildDir = b.GitInfo.RepoURL
+
 	if err != nil {
 		return err
 	}
@@ -642,7 +649,6 @@ func (b *Build) run(ctx context.Context, executor Executor) (err error) {
 				buildPanic <- &BuildError{FailureReason: RunnerSystemFailure, Inner: fmt.Errorf("panic: %s", r)}
 			}
 		}()
-
 		buildFinish <- b.executeScript(runContext, executor)
 	}()
 

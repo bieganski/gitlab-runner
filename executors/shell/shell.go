@@ -216,7 +216,6 @@ func init() {
 	if err != nil {
 		logrus.Warningln(err)
 	}
-
 	RegisterExecutor("shell", runnerCommand)
 }
 

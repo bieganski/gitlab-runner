@@ -36,6 +36,46 @@ func (m *DataBag) GetStringSlice(keys ...string) (slice []string, ok bool) {
 	return
 }
 
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
+
+func Filter(vs []string, f func(string) bool) []string {
+	vsf := make([]string, 0)
+	for _, v := range vs {
+		if f(v) && len(v) > 7 {
+			vsf = append(vsf, v)
+		}
+	}
+	return vsf
+}
+
+func (m *DataBag) GetAllJobs() (result []string, ok bool) { // (result []string, ok bool) {
+	var keys = []string{}
+	for k := range *m {
+		keys = append(keys, k)
+	}
+	for i := range keys {
+		value, ok := helpers.GetMapKey(*m, keys[i])
+		if ok {
+			value, ok = value.(map[string]interface{})
+			if ok {
+				result = append(result, keys[i])
+			}
+		}
+	}
+	var out = []string{"variables", "workflow"}
+	result = Filter(result, func(el string) bool { return !contains(out, el) })
+
+	return
+}
+
 func (m *DataBag) GetSubOptions(keys ...string) (result DataBag, ok bool) {
 	value, ok := helpers.GetMapKey(*m, keys...)
 	if ok {

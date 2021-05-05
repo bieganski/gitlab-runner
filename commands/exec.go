@@ -97,19 +97,44 @@ func (c *ExecCommand) getTimeout() int {
 }
 
 func (c *ExecCommand) Execute(context *cli.Context) {
-	wd, err := os.Getwd()
-	if err != nil {
-		logrus.Fatalln(err)
-	}
+	var job string
 
 	switch len(context.Args()) {
 	case 1:
-		c.Job = context.Args().Get(0)
+		job = context.Args().Get(0)
 	default:
 		_ = cli.ShowSubcommandHelp(context)
 		os.Exit(1)
 		return
 	}
+
+	if job == "all" {
+		parser := gitlab_ci_yaml_parser.NewGitLabCiYamlParser(c.Job)
+		var m, _ = parser.ParseFile()
+
+		var jobs, ok = m.GetAllJobs()
+		if ok {
+			for i := range jobs {
+				c.ExecuteOrig(context, jobs[i])
+			}
+		} else {
+			// TODO it goes here, why?
+			for i := range jobs {
+				c.ExecuteOrig(context, jobs[i])
+			}
+		}
+	} else {
+		c.ExecuteOrig(context, job)
+	}
+}
+
+func (c *ExecCommand) ExecuteOrig(context *cli.Context, job string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		logrus.Fatalln(err)
+	}
+
+	c.Job = job
 
 	c.Executor = context.Command.Name
 
@@ -137,6 +162,7 @@ func (c *ExecCommand) Execute(context *cli.Context) {
 	}
 
 	err = build.Run(&common.Config{}, &common.Trace{Writer: os.Stdout})
+
 	if err != nil {
 		logrus.Fatalln(err)
 	}

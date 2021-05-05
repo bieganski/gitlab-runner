@@ -207,6 +207,13 @@ func (b *AbstractShell) writePrepareScript(w ShellWriter, info common.ShellScrip
 }
 
 func (b *AbstractShell) writeGetSourcesScript(w ShellWriter, info common.ShellScriptInfo) error {
+
+	var projectDir = info.Build.GetAllVariables().Get("CI_PROJECT_DIR")
+	if info.Build.GitInfo.RepoURL == projectDir {
+		fmt.Println("INPLACE RUN DETECTED (in path %s)... ", projectDir)
+		return nil
+	}
+
 	b.writeExports(w, info)
 
 	if !info.Build.IsSharedEnv() {
